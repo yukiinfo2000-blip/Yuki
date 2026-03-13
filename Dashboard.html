@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>CRM Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#f4f6fa;display:flex}
+.sidebar{width:220px;background:#2f4365;color:white;padding:25px;height:100vh}
+.menuItem{margin:15px 0;cursor:pointer}
+.main{flex:1;padding:30px}
+.title{text-align:center;font-size:26px;margin-bottom:20px}
+
+.topbar{text-align:center;margin-bottom:30px}
+.topbar input{padding:6px;margin:5px}
+button{padding:6px 14px;background:#2f4365;color:white;border:none;border-radius:6px;cursor:pointer}
+
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:30px}
+.card{background:white;padding:20px;border-radius:10px;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.1)}
+.big{font-size:26px;font-weight:bold}
+
+table{width:100%;border-collapse:collapse;background:white;margin-bottom:30px}
+th{background:#2f4365;color:white;padding:10px}
+td{padding:10px;border-bottom:1px solid #eee;text-align:center}
+
+.chartContainer{max-width:1000px;margin:auto;background:white;padding:20px;border-radius:10px}
+canvas{height:500px !important}
+
+.page{display:none}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>CRM</h2>
+<div class="menuItem" onclick="showPage('dashboard')">Dashboard</div>
+<div class="menuItem" onclick="showPage('office')">事务统计</div>
+<div class="menuItem" onclick="exportCSV()">数据导出</div>
+</div>
+
+<div class="main">
+
+<div class="title">CRM Dashboard</div>
+
+<div class="topbar">
+日期
+<input type="date" id="startDate">
+到
+<input type="date" id="endDate">
+<button onclick="searchDate()">查询</button>
+
+&nbsp;&nbsp;
+
+月份
+<input type="month" id="startMonth">
+到
+<input type="month" id="endMonth">
+<button onclick="searchMonth()">查询</button>
+</div>
+
+
+<!-- Dashboard -->
+<div id="page_dashboard" class="page">
+
+<div class="kpi">
+<div class="card">总电话<div class="big" id="totalCalls">0</div></div>
+<div class="card">接通<div class="big" id="answered">0</div></div>
+<div class="card">接通率<div class="big" id="rate">0%</div></div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>OP</th>
+<th>电话量</th>
+<th>接通</th>
+<th>接通率</th>
+</tr>
+</thead>
+<tbody id="opTable"></tbody>
+</table>
+
+<div class="chartContainer">
+<h3>电话量趋势</h3>
+<canvas id="callChart"></canvas>
+</div>
+
+</div>
+
+
+<!-- 事务统计 -->
+<div id="page_office" class="page">
+
+<h2>事务统计（18项）</h2>
+
+<table>
+<thead>
+<tr>
+<th>事务</th>
+<th>数量</th>
+</tr>
+</thead>
+<tbody id="officeTable"></tbody>
+</table>
+
+<div class="chartContainer">
+<h3>事务业务占比</h3>
+<canvas id="officeChart"></canvas>
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* 修改这里 */
+const SUPABASE_URL="https://ieijoczgnndiqmowadty.supabase.co"
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg"
+
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)
+
+function showPage(name){
+document.querySelectorAll(".page").forEach(p=>p.style.display="none")
+document.getElementById("page_"+name).style.display="block"
+}
+showPage("dashboard")
+
+/* 事务名称 */
+
+const officeNames={
+list_kaitsu:"開通リスト更新",
+mail_list:"メルマガリスト",
+list_fubi:"不備リスト更新",
+mail_app:"メルマガアプリ",
+card:"顧客カード作成",
+issuer1:"イシュア不備（1次）",
+promo:"販促物リスト作成",
+risk_tel:"風控業務（電話）",
+sf:"SF売り上げ導入",
+risk_mail:"風控業務（メール）",
+ms:"イシュア不備（M&S）",
+complain_tel:"投诉业务（电话）",
+es:"イシュア不備（ES）",
+complain_mail:"投诉业务（邮件）",
+olc:"OLC決済突合",
+haneda_trans:"羽田翻译",
+jb:"ジェイブリッツ案件",
+haneda_cs:"羽田客服"
+}
+
+function num(v){return Number(v||0)}
+
+let rawData=[]
+let callChart
+let officeChart
+
+function searchDate(){
+let start=document.getElementById("startDate").value
+let end=document.getElementById("endDate").value
+fetchData(start,end)
+}
+
+function searchMonth(){
+let start=document.getElementById("startMonth").value+"-01"
+let end=new Date(document.getElementById("endMonth").value+"-01")
+end.setMonth(end.getMonth()+1)
+end.setDate(0)
+fetchData(start,end.toISOString().slice(0,10))
+}
+
+async function fetchData(start,end){
+
+const {data}=await supabaseClient
+.from("op_daily")
+.select("*")
+.gte("date",start)
+.lte("date",end)
+
+rawData=data
+render(data)
+}
+
+function render(data){
+
+let total=0
+let ans=0
+let opMap={}
+let dateMap={}
+let officeMap={}
+
+for(let k in officeNames) officeMap[k]=0
+
+data.forEach(r=>{
+
+let calls =
+num(r.inbound)+
+num(r.kaitsu)+
+num(r.fubi)+
+num(r.issuer_fubi)+
+num(r.yokohama)+
+num(r.first_payment)+
+num(r.month3)+
+num(r.month6)+
+num(r.month12)+
+num(r.condition)
+
+let answered =
+num(r.inbound_answer)+
+num(r.kaitsu_answered)+
+num(r.fubi_answered)+
+num(r.issuer_fubi_answ)+
+num(r.yokohama_answe)+
+num(r.first_payment_an)+
+num(r.month3_answered)+
+num(r.month6_answered)+
+num(r.month12_answer)+
+num(r.condition_answe)
+
+total+=calls
+ans+=answered
+
+if(!opMap[r.op_name]) opMap[r.op_name]={c:0,a:0}
+opMap[r.op_name].c+=calls
+opMap[r.op_name].a+=answered
+
+if(!dateMap[r.date]) dateMap[r.date]=0
+dateMap[r.date]+=calls
+
+for(let k in officeMap){
+officeMap[k]+=num(r[k])
+}
+
+})
+
+document.getElementById("totalCalls").innerText=total
+document.getElementById("answered").innerText=ans
+document.getElementById("rate").innerText=(total?Math.round(ans/total*100):0)+"%"
+
+let opHTML=""
+for(let op in opMap){
+let c=opMap[op].c
+let a=opMap[op].a
+opHTML+=`<tr>
+<td>${op}</td>
+<td>${c}</td>
+<td>${a}</td>
+<td>${Math.round(a/c*100)||0}%</td>
+</tr>`
+}
+document.getElementById("opTable").innerHTML=opHTML
+
+let officeHTML=""
+for(let k in officeMap){
+officeHTML+=`<tr>
+<td>${officeNames[k]}</td>
+<td>${officeMap[k]}</td>
+</tr>`
+}
+document.getElementById("officeTable").innerHTML=officeHTML
+
+drawCharts(dateMap,officeMap)
+
+}
+
+function drawCharts(dateMap,officeMap){
+
+if(callChart) callChart.destroy()
+if(officeChart) officeChart.destroy()
+
+let dates=Object.keys(dateMap).sort()
+
+callChart=new Chart(
+document.getElementById("callChart"),
+{
+type:"line",
+data:{
+labels:dates,
+datasets:[{
+label:"电话量",
+data:dates.map(d=>dateMap[d]),
+borderColor:"#2f4365",
+fill:false
+}]
+}
+})
+
+officeChart=new Chart(
+document.getElementById("officeChart"),
+{
+type:"bar",
+data:{
+labels:Object.values(officeNames),
+datasets:[{
+label:"事务数量",
+data:Object.values(officeMap),
+backgroundColor:"#5b6f95"
+}]
+},
+options:{plugins:{legend:{display:false}}}
+})
+
+}
+
+function exportCSV(){
+
+let csv="date,op,calls\n"
+
+rawData.forEach(r=>{
+csv+=`${r.date},${r.op_name},${r.inbound}\n`
+})
+
+let blob=new Blob([csv])
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="crm_data.csv"
+a.click()
+
+}
+
+/* 页面打开默认加载今年数据 */
+
+fetchData("2026-01-01","2026-12-31")
+
+</script>
+
+</body>
+</html>
+
