@@ -4,7 +4,6 @@
 <head>
 
 <meta charset="UTF-8">
-
 <title>OP CRM Dashboard</title>
 
 <link href="https://cdn.jsdelivr.net/npm/harmonyos-sans@1.0.0/index.min.css" rel="stylesheet">
@@ -23,7 +22,6 @@ font-size:14px;
 color:#2c3e50;
 }
 
-/* Dashboard标题 */
 .mainTitle{
 font-size:22px;
 font-weight:600;
@@ -31,15 +29,12 @@ text-align:center;
 margin-bottom:25px;
 }
 
-/* OP统计标题 */
 .sectionTitle{
 font-size:16px;
 font-weight:600;
 margin-top:25px;
 margin-bottom:10px;
 }
-
-/* 查询栏 */
 
 .topbar{
 text-align:center;
@@ -62,15 +57,9 @@ border-radius:6px;
 cursor:pointer;
 }
 
-button:hover{
-background:#2f3d55;
-}
-
-/* 统计卡片 */
-
 .dashboard{
 display:grid;
-grid-template-columns:repeat(3,1fr);
+grid-template-columns:repeat(6,1fr);
 gap:20px;
 margin-bottom:25px;
 }
@@ -88,8 +77,6 @@ font-size:26px;
 font-weight:600;
 margin-top:5px;
 }
-
-/* OP表格 */
 
 table{
 width:100%;
@@ -111,8 +98,6 @@ text-align:center;
 border-bottom:1px solid #eee;
 }
 
-/* 图表区域 */
-
 .charts{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -129,10 +114,8 @@ height:340px;
 }
 
 canvas{
-max-height:280px !important;
+max-height:260px !important;
 }
-
-/* 事务统计 */
 
 .officeGrid{
 display:grid;
@@ -164,12 +147,9 @@ margin-top:4px;
 
 </head>
 
-
-
 <body>
 
 <div class="mainTitle">OP CRM Dashboard</div>
-
 
 <div class="topbar">
 
@@ -185,16 +165,25 @@ margin-top:4px;
 </div>
 
 
-
 <div class="dashboard">
 
 <div class="card">
-<div>总电话量</div>
+<div>来电量</div>
+<div class="big" id="inbound">0</div>
+</div>
+
+<div class="card">
+<div>电话完拨量</div>
 <div class="big" id="totalCalls">0</div>
 </div>
 
 <div class="card">
 <div>接通量</div>
+<div class="big" id="connected">0</div>
+</div>
+
+<div class="card">
+<div>有效接通量</div>
 <div class="big" id="answered">0</div>
 </div>
 
@@ -203,8 +192,12 @@ margin-top:4px;
 <div class="big" id="rate">0%</div>
 </div>
 
+<div class="card">
+<div>有效接通率</div>
+<div class="big" id="validRate">0%</div>
 </div>
 
+</div>
 
 
 <div class="sectionTitle">OP统计表</div>
@@ -214,16 +207,18 @@ margin-top:4px;
 <thead>
 <tr>
 <th>OP</th>
+<th>来电量</th>
 <th>电话量</th>
 <th>接通量</th>
+<th>有效接通量</th>
 <th>接通率</th>
+<th>有效接通率</th>
 </tr>
 </thead>
 
 <tbody id="opTable"></tbody>
 
 </table>
-
 
 
 <div class="charts">
@@ -241,11 +236,8 @@ margin-top:4px;
 </div>
 
 
-
 <div class="sectionTitle">事务作业统计</div>
-
 <div class="officeGrid" id="officeStats"></div>
-
 
 
 <script>
@@ -257,7 +249,6 @@ const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)
 
 let officeChart
 let callChart
-
 
 
 function calcCalls(r){
@@ -274,7 +265,7 @@ Number(r.condition||0)
 )
 }
 
-function calcAnswered(r){
+function calcValidAnswered(r){
 return(
 Number(r.kaitsu_answered||0)+
 Number(r.fubi_answered||0)+
@@ -287,7 +278,6 @@ Number(r.month12_answered||0)+
 Number(r.condition_answered||0)
 )
 }
-
 
 
 function createOfficeStats(){
@@ -318,22 +308,17 @@ haneda_cs:{name:"羽田客服",val:0}
 }
 
 
-
 function renderOffice(stats){
 
 let html=""
 
 for(const k in stats){
 
-let item=stats[k]
-
 html+=`
-
 <div class="officeCard">
-<div>${item.name}</div>
-<div>${item.val}</div>
+<div>${stats[k].name}</div>
+<div>${stats[k].val}</div>
 </div>
-
 `
 
 }
@@ -343,25 +328,20 @@ document.getElementById("officeStats").innerHTML=html
 }
 
 
-
 function drawOfficeChart(stats){
 
 let labels=[]
 let values=[]
 
 for(const k in stats){
-
 labels.push(stats[k].name)
 values.push(stats[k].val)
-
 }
 
 if(officeChart) officeChart.destroy()
 
 officeChart=new Chart(document.getElementById("officeChart"),{
-
 type:"bar",
-
 data:{
 labels:labels,
 datasets:[{
@@ -369,9 +349,7 @@ data:values,
 backgroundColor:"#3b4a66"
 }]
 },
-
 plugins:[ChartDataLabels],
-
 options:{
 plugins:{
 legend:{display:false},
@@ -379,11 +357,9 @@ datalabels:{anchor:"end",align:"top"}
 },
 scales:{y:{beginAtZero:true}}
 }
-
 })
 
 }
-
 
 
 function drawCallChart(data){
@@ -401,15 +377,12 @@ map[r.date]+=calls
 })
 
 let labels=Object.keys(map)
-
 let values=Object.values(map)
 
 if(callChart) callChart.destroy()
 
 callChart=new Chart(document.getElementById("callChart"),{
-
 type:"line",
-
 data:{
 labels:labels,
 datasets:[{
@@ -420,9 +393,7 @@ tension:0.3,
 fill:false
 }]
 },
-
 plugins:[ChartDataLabels],
-
 options:{
 plugins:{
 legend:{display:false},
@@ -430,11 +401,9 @@ datalabels:{align:"top"}
 },
 scales:{y:{beginAtZero:true}}
 }
-
 })
 
 }
-
 
 
 async function loadByDate(){
@@ -449,7 +418,6 @@ let {data}=await supabaseClient
 render(data)
 
 }
-
 
 
 async function loadByMonth(){
@@ -470,13 +438,15 @@ render(data)
 }
 
 
-
 function render(data){
 
 let officeStats=createOfficeStats()
 
+let inbound=0
 let totalCalls=0
+let connected=0
 let answered=0
+
 let opMap={}
 
 if(data){
@@ -484,50 +454,66 @@ if(data){
 data.forEach(r=>{
 
 let calls=calcCalls(r)
-let ans=calcAnswered(r)
+let validAns=calcValidAnswered(r)
 
+let inboundCall=Number(r.inbound_answered||0)
+let conn=Number(r.inbound_connect||0)
+
+inbound+=inboundCall
 totalCalls+=calls
-answered+=ans
+connected+=conn
+answered+=validAns
 
 if(!opMap[r.op_name]){
 
-opMap[r.op_name]={calls:0,ans:0}
+opMap[r.op_name]={inbound:0,calls:0,conn:0,ans:0}
 
 }
 
+opMap[r.op_name].inbound+=inboundCall
 opMap[r.op_name].calls+=calls
-opMap[r.op_name].ans+=ans
+opMap[r.op_name].conn+=conn
+opMap[r.op_name].ans+=validAns
 
 for(const k in officeStats){
-
 officeStats[k].val+=Number(r[k])||0
-
 }
 
 })
 
 }
 
-let rate=totalCalls?Math.round(answered/totalCalls*100):0
+let rate=totalCalls?Math.round(connected/totalCalls*100):0
+let validRate=totalCalls?Math.round(answered/totalCalls*100):0
 
+document.getElementById("inbound").innerText=inbound
 document.getElementById("totalCalls").innerText=totalCalls
+document.getElementById("connected").innerText=connected
 document.getElementById("answered").innerText=answered
 document.getElementById("rate").innerText=rate+"%"
+document.getElementById("validRate").innerText=validRate+"%"
 
 let html=""
 
 for(const op in opMap){
 
+let i=opMap[op].inbound
 let c=opMap[op].calls
+let conn=opMap[op].conn
 let a=opMap[op].ans
-let r=c?Math.round(a/c*100):0
+
+let r=c?Math.round(conn/c*100):0
+let vr=c?Math.round(a/c*100):0
 
 html+=`
 <tr>
 <td>${op}</td>
+<td>${i}</td>
 <td>${c}</td>
+<td>${conn}</td>
 <td>${a}</td>
 <td>${r}%</td>
+<td>${vr}%</td>
 </tr>
 `
 
@@ -536,7 +522,6 @@ html+=`
 document.getElementById("opTable").innerHTML=html
 
 renderOffice(officeStats)
-
 drawOfficeChart(officeStats)
 
 if(data) drawCallChart(data)
