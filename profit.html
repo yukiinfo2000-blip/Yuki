@@ -56,14 +56,11 @@ canvas { width:100% !important; height:260px !important; }
 <div class="header">
   <h1>呼叫中心财务BI</h1>
   <div class="toolbar">
-    <input type="month" id="start">
-    <input type="month" id="end">
     <select id="unit">
       <option value="1">元</option>
       <option value="1000">千</option>
       <option value="10000">万</option>
     </select>
-    <button onclick="loadData()">查询</button>
     <button onclick="logout()">退出</button>
   </div>
 </div>
@@ -105,7 +102,7 @@ const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let charts = {};
 
-// 金额格式化
+// 格式化
 function format(num){
   return Number(num).toLocaleString();
 }
@@ -120,6 +117,8 @@ async function login(){
 
   loginBox.style.display="none";
   app.style.display="block";
+
+  loadData();
 }
 
 // 登出
@@ -129,14 +128,14 @@ async function logout(){
   app.style.display="none";
 }
 
-// 趋势预测
-function predict(data){
-  let n=data.length;
-  if(n<2) return data[n-1]||0;
-  return data[n-1]+(data[n-1]-data[n-2]);
+// 当前月份索引
+function getCurrentMonthIndex(){
+  const now = new Date();
+  if(now.getFullYear() !== 2026) return 12;
+  return now.getMonth();
 }
 
-// 数据标签插件
+// 标签插件
 const labelPlugin = {
   id: 'labels',
   afterDatasetsDraw(chart){
@@ -156,59 +155,35 @@ const labelPlugin = {
   }
 };
 
+// 数据加载（固定2026）
 async function loadData(){
 
   const unitValue = Number(unit.value);
 
   let months=[], inc=[], cos=[], profit=[];
 
-  let d=new Date(start.value+"-01");
-  let endDate=new Date(end.value+"-01");
+  for(let m=0; m<12; m++){
 
-  while(d<=endDate){
-
-    let year = d.getFullYear();
-
-    // ✅ 只保留2026
-    if(year !== 2026){
-      d.setMonth(d.getMonth()+1);
-      continue;
-    }
-
-    let m=d.toISOString().slice(0,7);
-    let startDate=m+"-01";
-
-    let next=new Date(startDate);
-    next.setMonth(next.getMonth()+1);
+    let startDate = new Date(2026, m, 1);
+    let next = new Date(2026, m+1, 1);
 
     const { data:iData } = await supa.from("finance_income")
-      .select("amount").gte("month",startDate).lt("month",next.toISOString());
+      .select("amount")
+      .gte("month", startDate.toISOString())
+      .lt("month", next.toISOString());
 
     const { data:cData } = await supa.from("finance_cost")
-      .select("amount").gte("month",startDate).lt("month",next.toISOString());
+      .select("amount")
+      .gte("month", startDate.toISOString())
+      .lt("month", next.toISOString());
 
     let i=iData?.reduce((a,b)=>a+Number(b.amount),0)||0;
     let c=cData?.reduce((a,b)=>a+Number(b.amount),0)||0;
 
-    months.push(startDate);
+    months.push((m+1)+"月");
     inc.push(i/unitValue);
     cos.push(c/unitValue);
     profit.push((i-c)/unitValue);
-
-    d.setMonth(d.getMonth()+1);
-  }
-
-  // 预测（仅补到2026年底）
-  while(months.length < 12){
-    let nextMonth = new Date(months.at(-1));
-    nextMonth.setMonth(nextMonth.getMonth()+1);
-
-    if(nextMonth.getFullYear() !== 2026) break;
-
-    months.push(nextMonth.toISOString().slice(0,10));
-    inc.push(predict(inc));
-    cos.push(predict(cos));
-    profit.push(predict(profit));
   }
 
   income.innerText = format(inc.reduce((a,b)=>a+b,0));
@@ -222,7 +197,7 @@ async function loadData(){
   },100);
 }
 
-// 图表
+// 图表（含预测效果）
 function draw(id,labels,data,color){
 
   if(charts[id]) charts[id].destroy();
@@ -238,12 +213,38 @@ function draw(id,labels,data,color){
         data,
         borderWidth:2,
         tension:0.3,
+
         pointRadius: ctx => data[ctx.dataIndex]===max?6:3,
         pointBackgroundColor: ctx => data[ctx.dataIndex]===max?"red":color,
+
+        // 🔴 预测虚线
         segment:{
-          borderDash:c=>new Date(labels[c.p0DataIndex])>new Date()?[6,6]:[],
-          borderColor:c=>new Date(labels[c.p0DataIndex])>new Date()?"red":color
+          borderDash: ctx=>{
+            return ctx.p0DataIndex >= getCurrentMonthIndex() ? [6,6] : [];
+          },
+          borderColor: ctx=>{
+            return ctx.p0DataIndex >= getCurrentMonthIndex() ? "red" : color;
+          }
+        },
+
+        // 🔴 灰色蒙版
+        fill:true,
+        backgroundColor: ctx=>{
+          const chart = ctx.chart;
+          const {ctx:canvas, chartArea} = chart;
+          if(!chartArea) return null;
+
+          const gradient = canvas.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          let split = getCurrentMonthIndex() / data.length;
+
+          gradient.addColorStop(0, "rgba(0,0,0,0)");
+          gradient.addColorStop(split, "rgba(0,0,0,0)");
+          gradient.addColorStop(split, "rgba(150,150,150,0.2)");
+          gradient.addColorStop(1, "rgba(150,150,150,0.2)");
+
+          return gradient;
         }
+
       }]
     },
     options:{
