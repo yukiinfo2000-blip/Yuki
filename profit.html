@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>呼叫中心财务BI</title>
+
+<link href="https://cdn.jsdelivr.net/npm/harmonyos-sans@1.0.0/index.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body { font-family:"HarmonyOS Sans SC"; background:#f4f6f9; padding:30px; margin:0; }
+
+#loginBox { width:320px; margin:120px auto; background:#fff; padding:30px; border-radius:12px; text-align:center; }
+#app { display:none; max-width:1200px; margin:auto; }
+
+.header { text-align:center; margin-bottom:25px; }
+.header h1 { font-size:36px; font-weight:600; }
+
+.toolbar { display:flex; justify-content:center; gap:10px; margin-top:10px; }
+
+.cards { display:flex; gap:20px; margin-bottom:25px; }
+.card { flex:1; padding:20px; border-radius:12px; color:#fff; text-align:center; }
+
+.income{background:#7097B2;}
+.cost{background:#4A7BA7;}
+.profit{background:#2D5075;}
+
+.value { font-size:32px; margin-top:10px; }
+
+.chart-row { display:flex; gap:20px; margin-bottom:20px; }
+.chart-box { background:#fff; padding:20px; border-radius:12px; }
+
+.chart-title { text-align:center; font-weight:600; margin-bottom:10px; }
+
+.chart-income { width:100%; height:320px; }
+.chart-half { flex:1; height:300px; }
+
+canvas { width:100% !important; height:260px !important; }
+
+.footer { margin-top:20px; font-size:12px; color:#999; text-align:center; }
+</style>
+</head>
+
+<body>
+
+<div id="loginBox">
+  <h3>系统登录</h3>
+  <input id="email" placeholder="账号"><br><br>
+  <input id="password" type="password" placeholder="密码"><br><br>
+  <button onclick="login()">登录</button>
+</div>
+
+<div id="app">
+
+<div class="header">
+  <h1>呼叫中心财务BI</h1>
+  <div class="toolbar">
+    <input type="month" id="start">
+    <input type="month" id="end">
+    <select id="unit">
+      <option value="1">元</option>
+      <option value="1000">千</option>
+      <option value="10000">万</option>
+    </select>
+    <button onclick="loadData()">查询</button>
+    <button onclick="logout()">退出</button>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card income">收入<div class="value" id="income">--</div></div>
+  <div class="card cost">成本<div class="value" id="cost">--</div></div>
+  <div class="card profit">利润<div class="value" id="profit">--</div></div>
+</div>
+
+<div class="chart-row">
+  <div class="chart-box chart-income">
+    <div class="chart-title">收入</div>
+    <canvas id="chartIncome"></canvas>
+  </div>
+</div>
+
+<div class="chart-row">
+  <div class="chart-box chart-half">
+    <div class="chart-title">成本</div>
+    <canvas id="chartCost"></canvas>
+  </div>
+  <div class="chart-box chart-half">
+    <div class="chart-title">利润</div>
+    <canvas id="chartProfit"></canvas>
+  </div>
+</div>
+
+<div class="footer">
+本报表部分数据基于业务规则进行预估及拆分计算，可能存在约300–500误差，不影响整体趋势判断。
+</div>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://ieijoczgnndiqmowadty.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg";
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let charts = {};
+
+// 金额格式化
+function format(num){
+  return Number(num).toLocaleString();
+}
+
+// 登录
+async function login(){
+  const { error } = await supa.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
+  if(error){ alert(error.message); return; }
+
+  loginBox.style.display="none";
+  app.style.display="block";
+}
+
+// 登出
+async function logout(){
+  await supa.auth.signOut();
+  loginBox.style.display="block";
+  app.style.display="none";
+}
+
+// 趋势预测
+function predict(data){
+  let n=data.length;
+  if(n<2) return data[n-1]||0;
+  return data[n-1]+(data[n-1]-data[n-2]);
+}
+
+// 数据标签插件
+const labelPlugin = {
+  id: 'labels',
+  afterDatasetsDraw(chart){
+    const {ctx} = chart;
+    chart.data.datasets.forEach((dataset, i)=>{
+      const meta = chart.getDatasetMeta(i);
+      meta.data.forEach((point, index)=>{
+        const value = dataset.data[index];
+        if(value === 0) return;
+
+        ctx.fillStyle = "#333";
+        ctx.font = "10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(format(value), point.x, point.y - 8);
+      });
+    });
+  }
+};
+
+async function loadData(){
+
+  const unitValue = Number(unit.value);
+
+  let months=[], inc=[], cos=[], profit=[];
+
+  let d=new Date(start.value+"-01");
+  let endDate=new Date(end.value+"-01");
+
+  while(d<=endDate){
+
+    let year = d.getFullYear();
+
+    // ✅ 只保留2026
+    if(year !== 2026){
+      d.setMonth(d.getMonth()+1);
+      continue;
+    }
+
+    let m=d.toISOString().slice(0,7);
+    let startDate=m+"-01";
+
+    let next=new Date(startDate);
+    next.setMonth(next.getMonth()+1);
+
+    const { data:iData } = await supa.from("finance_income")
+      .select("amount").gte("month",startDate).lt("month",next.toISOString());
+
+    const { data:cData } = await supa.from("finance_cost")
+      .select("amount").gte("month",startDate).lt("month",next.toISOString());
+
+    let i=iData?.reduce((a,b)=>a+Number(b.amount),0)||0;
+    let c=cData?.reduce((a,b)=>a+Number(b.amount),0)||0;
+
+    months.push(startDate);
+    inc.push(i/unitValue);
+    cos.push(c/unitValue);
+    profit.push((i-c)/unitValue);
+
+    d.setMonth(d.getMonth()+1);
+  }
+
+  // 预测（仅补到2026年底）
+  while(months.length < 12){
+    let nextMonth = new Date(months.at(-1));
+    nextMonth.setMonth(nextMonth.getMonth()+1);
+
+    if(nextMonth.getFullYear() !== 2026) break;
+
+    months.push(nextMonth.toISOString().slice(0,10));
+    inc.push(predict(inc));
+    cos.push(predict(cos));
+    profit.push(predict(profit));
+  }
+
+  income.innerText = format(inc.reduce((a,b)=>a+b,0));
+  cost.innerText = format(cos.reduce((a,b)=>a+b,0));
+  document.getElementById("profit").innerText = format(profit.reduce((a,b)=>a+b,0));
+
+  setTimeout(()=>{
+    draw("chartIncome",months,inc,"#7097B2");
+    draw("chartCost",months,cos,"#4A7BA7");
+    draw("chartProfit",months,profit,"#2D5075");
+  },100);
+}
+
+// 图表
+function draw(id,labels,data,color){
+
+  if(charts[id]) charts[id].destroy();
+
+  const ctx=document.getElementById(id).getContext("2d");
+  let max=Math.max(...data);
+
+  charts[id]=new Chart(ctx,{
+    type:"line",
+    data:{
+      labels,
+      datasets:[{
+        data,
+        borderWidth:2,
+        tension:0.3,
+        pointRadius: ctx => data[ctx.dataIndex]===max?6:3,
+        pointBackgroundColor: ctx => data[ctx.dataIndex]===max?"red":color,
+        segment:{
+          borderDash:c=>new Date(labels[c.p0DataIndex])>new Date()?[6,6]:[],
+          borderColor:c=>new Date(labels[c.p0DataIndex])>new Date()?"red":color
+        }
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label:ctx=> "金额: "+format(ctx.raw)
+          }
+        }
+      }
+    },
+    plugins:[labelPlugin]
+  });
+}
+</script>
+
+</body>
+</html>

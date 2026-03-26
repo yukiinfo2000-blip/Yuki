@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>稼动率看板</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:"Segoe UI","Microsoft YaHei";
+    background:#F4F6F8;
+}
+
+h1{
+    text-align:center;
+    padding:10px;
+}
+
+/* 查询栏 */
+.filter{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+select,button{
+    padding:5px 10px;
+    margin:5px;
+}
+
+/* 容器 */
+.wrapper{
+    width:72%;
+    margin:auto;
+}
+
+/* 年度图 */
+.year-chart{
+    background:#E9EEF2;
+    height:220px;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:15px;
+}
+
+/* 4图 */
+.grid{
+    display:grid;
+    grid-template-columns: repeat(2,1fr);
+    gap:22px;
+}
+
+.card{
+    background:#DDE3E8;
+    padding:18px;
+    border-radius:14px;
+    height:360px;
+}
+
+.card:nth-child(even){
+    background:#CCD5DD;
+}
+
+.card canvas{
+    height:280px !important;
+}
+
+.title{
+    text-align:center;
+    margin-bottom:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>2026年稼动率看板</h1>
+
+<div class="filter">
+    开始月份：
+    <select id="startMonth"></select>
+    结束月份：
+    <select id="endMonth"></select>
+    <button onclick="search()">查询</button>
+</div>
+
+<div class="wrapper">
+
+    <div class="year-chart">
+        <canvas id="yearChart"></canvas>
+    </div>
+
+    <div class="grid" id="charts"></div>
+
+</div>
+
+<script>
+const URL="https://ieijoczgnndiqmowadty.supabase.co";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg";
+
+Chart.defaults.font.family="'Segoe UI','Microsoft YaHei'";
+
+let allData=[];
+
+/* 获取数据 */
+async function getData(){
+    let res=await fetch(`${URL}/rest/v1/utilization_daily?select=*`,{
+        headers:{apikey:KEY,Authorization:"Bearer "+KEY}
+    });
+    return await res.json();
+}
+
+/* 分组 */
+function group(data){
+    let m={};
+    data.forEach(d=>{
+        let month=new Date(d.stat_date).getMonth()+1;
+        if(!m[month]) m[month]=[];
+        m[month].push(d);
+    });
+    return m;
+}
+
+/* 渐变 */
+function gradient(ctx,color){
+    let g=ctx.createLinearGradient(0,0,0,300);
+    g.addColorStop(0,color);
+    g.addColorStop(1,"rgba(255,255,255,0)");
+    return g;
+}
+
+/* 图表 */
+function createChart(canvas,labels,real,forecast,isYear=false){
+
+    let ctx=canvas.getContext("2d");
+
+    let startIndex=real.findIndex(v=>v===null);
+
+    new Chart(canvas,{
+        type:'line',
+        data:{
+            labels,
+            datasets:[
+                {
+                    data:real,
+                    borderColor:'#4A6C8C',
+                    backgroundColor:gradient(ctx,"rgba(74,108,140,0.3)"),
+                    fill:true,
+                    tension:0.35,
+                    pointRadius:4,
+                    pointHoverRadius:7,
+                    pointBackgroundColor:'#4A6C8C',
+                    pointBorderColor:'#fff',
+                    pointBorderWidth:2
+                },
+                {
+                    data:forecast,
+                    borderColor:'#C06C6C',
+                    backgroundColor:gradient(ctx,"rgba(192,108,108,0.3)"),
+                    fill:true,
+                    borderDash:[6,6],
+                    tension:0.35,
+                    pointRadius:4,
+                    pointHoverRadius:7,
+                    pointBackgroundColor:'#C06C6C',
+                    pointBorderColor:'#fff',
+                    pointBorderWidth:2
+                }
+            ]
+        },
+        options:{
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{display:false},
+
+                datalabels:{
+                    anchor:'end',
+                    align:'top',
+                    formatter:v=>{
+                        if(!v) return "";
+                        return isYear ? Math.round(v)+"%" : v.toFixed(1)+"%";
+                    }
+                },
+
+                annotation:{
+                    annotations:startIndex!=-1?{
+                        box:{
+                            type:'box',
+                            xMin:startIndex,
+                            xMax:labels.length,
+                            backgroundColor:'rgba(150,150,150,0.15)'
+                        }
+                    }:{}
+                }
+            },
+            scales:{
+                y:{ticks:{callback:v=>v+"%"}}
+            }
+        },
+        plugins:[ChartDataLabels]
+    });
+}
+
+/* 年度图 */
+function drawYear(data){
+
+    let real=[],forecast=[],labels=[];
+
+    for(let m=1;m<=12;m++){
+
+        let arr=data.filter(d=>new Date(d.stat_date).getMonth()+1===m);
+
+        let avg=arr.length
+            ? arr.reduce((a,b)=>a+b.utilization,0)/arr.length
+            : null;
+
+        labels.push(m+"月");
+
+        if(arr.some(d=>d.is_forecast)){
+            real.push(null);
+            forecast.push(avg);
+        }else{
+            real.push(avg);
+            forecast.push(null);
+        }
+    }
+
+    createChart(
+        document.getElementById("yearChart"),
+        labels,
+        real,
+        forecast,
+        true
+    );
+}
+
+/* 月图 */
+function drawMonth(month,data,i){
+
+    let box=document.createElement("div");
+    box.className="card";
+
+    let t=document.createElement("div");
+    t.className="title";
+    t.innerText=month+"月";
+
+    let canvas=document.createElement("canvas");
+
+    box.appendChild(t);
+    box.appendChild(canvas);
+    document.getElementById("charts").appendChild(box);
+
+    let labels=[],real=[],forecast=[];
+
+    data.forEach(d=>{
+        let day=new Date(d.stat_date).getDate();
+        labels.push(day);
+
+        if(d.is_forecast){
+            real.push(null);
+            forecast.push(d.utilization);
+        }else{
+            real.push(d.utilization);
+            forecast.push(null);
+        }
+    });
+
+    createChart(canvas,labels,real,forecast,false);
+}
+
+/* 初始化下拉 */
+function initSelect(){
+
+    for(let i=1;i<=12;i++){
+        startMonth.add(new Option(i+"月",i));
+        endMonth.add(new Option(i+"月",i));
+    }
+
+    let now=new Date().getMonth()+1;
+    startMonth.value=Math.max(1,now-2);
+    endMonth.value=Math.min(12,parseInt(startMonth.value)+3);
+}
+
+/* 查询 */
+function search(){
+
+    let s=parseInt(startMonth.value);
+    let e=parseInt(endMonth.value);
+
+    if(e<s){ alert("结束月份错误"); return;}
+    if(e-s>=4){ alert("最多4个月"); return;}
+
+    render(s,e);
+}
+
+/* 渲染 */
+function render(s,e){
+
+    charts.innerHTML="";
+
+    let g=group(allData);
+
+    for(let m=s;m<=e;m++){
+        if(g[m]) drawMonth(m,g[m]);
+    }
+}
+
+/* 初始化 */
+async function init(){
+
+    allData=await getData();
+
+    drawYear(allData);
+
+    initSelect();
+
+    let now=new Date().getMonth()+1;
+    let s=Math.max(1,now-2);
+    let e=Math.min(12,s+3);
+
+    render(s,e);
+}
+
+init();
+</script>
+
+</body>
+</html>

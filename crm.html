@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>OP CRM Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/harmonyos-sans@1.0.0/index.min.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<style>
+
+body{
+font-family:"HarmonyOS Sans SC",sans-serif;
+background:#f4f6fa;
+padding:30px;
+font-size:14px;
+color:#2c3e50;
+}
+
+.mainTitle{
+font-size:22px;
+font-weight:600;
+text-align:center;
+margin-bottom:25px;
+}
+
+.sectionTitle{
+font-size:16px;
+font-weight:600;
+margin-top:25px;
+margin-bottom:10px;
+}
+
+.topbar{
+text-align:center;
+margin-bottom:25px;
+}
+
+input{
+padding:8px;
+border:1px solid #ccd2da;
+border-radius:6px;
+margin-right:10px;
+}
+
+button{
+padding:8px 18px;
+background:#3b4a66;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.dashboard{
+display:grid;
+grid-template-columns:repeat(6,1fr);
+gap:20px;
+margin-bottom:25px;
+}
+
+.card{
+background:white;
+padding:18px;
+border-radius:10px;
+text-align:center;
+box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+.big{
+font-size:26px;
+font-weight:600;
+margin-top:5px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+border-radius:8px;
+overflow:hidden;
+}
+
+th{
+background:#3b4a66;
+color:white;
+padding:10px;
+}
+
+td{
+padding:10px;
+text-align:center;
+border-bottom:1px solid #eee;
+}
+
+.charts{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+margin-top:25px;
+}
+
+.chartCard{
+background:white;
+padding:18px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.05);
+height:340px;
+}
+
+canvas{
+max-height:260px !important;
+}
+
+.officeGrid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px;
+margin-top:15px;
+}
+
+.officeCard{
+background:white;
+padding:12px;
+border-radius:8px;
+text-align:center;
+box-shadow:0 2px 6px rgba(0,0,0,0.05);
+}
+
+.officeCard div:first-child{
+font-size:13px;
+color:#666;
+}
+
+.officeCard div:last-child{
+font-size:18px;
+font-weight:600;
+margin-top:4px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="mainTitle">OP CRM Dashboard</div>
+
+<div class="topbar">
+
+日期
+<input type="date" id="date">
+
+月份
+<input type="month" id="month">
+
+<button onclick="loadByDate()">按日期</button>
+<button onclick="loadByMonth()">按月份</button>
+
+</div>
+
+
+<div class="dashboard">
+
+<div class="card">
+<div>来电量</div>
+<div class="big" id="inbound">0</div>
+</div>
+
+<div class="card">
+<div>电话完拨量</div>
+<div class="big" id="totalCalls">0</div>
+</div>
+
+<div class="card">
+<div>接通量</div>
+<div class="big" id="connected">0</div>
+</div>
+
+<div class="card">
+<div>有效接通量</div>
+<div class="big" id="answered">0</div>
+</div>
+
+<div class="card">
+<div>接通率</div>
+<div class="big" id="rate">0%</div>
+</div>
+
+<div class="card">
+<div>有效接通率</div>
+<div class="big" id="validRate">0%</div>
+</div>
+
+</div>
+
+
+<div class="sectionTitle">OP统计表</div>
+
+<table>
+
+<thead>
+<tr>
+<th>OP</th>
+<th>来电量</th>
+<th>电话量</th>
+<th>接通量</th>
+<th>有效接通量</th>
+<th>接通率</th>
+<th>有效接通率</th>
+</tr>
+</thead>
+
+<tbody id="opTable"></tbody>
+
+</table>
+
+
+<div class="charts">
+
+<div class="chartCard">
+<div class="sectionTitle">事务业务占比</div>
+<canvas id="officeChart"></canvas>
+</div>
+
+<div class="chartCard">
+<div class="sectionTitle">电话量趋势</div>
+<canvas id="callChart"></canvas>
+</div>
+
+</div>
+
+
+<div class="sectionTitle">事务作业统计</div>
+<div class="officeGrid" id="officeStats"></div>
+
+
+<script>
+
+const SUPABASE_URL="https://ieijoczgnndiqmowadty.supabase.co"
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg"
+
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)
+
+let officeChart
+let callChart
+
+
+function calcCalls(r){
+return(
+Number(r.kaitsu||0)+
+Number(r.fubi||0)+
+Number(r.issuer_fubi||0)+
+Number(r.yokohama||0)+
+Number(r.first_payment||0)+
+Number(r.month3||0)+
+Number(r.month6||0)+
+Number(r.month12||0)+
+Number(r.condition||0)
+)
+}
+
+function calcValidAnswered(r){
+return(
+Number(r.kaitsu_answered||0)+
+Number(r.fubi_answered||0)+
+Number(r.issuer_fubi_answered||0)+
+Number(r.yokohama_answered||0)+
+Number(r.first_payment_answered||0)+
+Number(r.month3_answered||0)+
+Number(r.month6_answered||0)+
+Number(r.month12_answered||0)+
+Number(r.condition_answered||0)
+)
+}
+
+
+function createOfficeStats(){
+
+return{
+
+list_kaitsu:{name:"開通リスト更新",val:0},
+mail_list:{name:"メルマガリスト",val:0},
+list_fubi:{name:"不備リスト更新",val:0},
+mail_app:{name:"メルマガアプリ",val:0},
+card:{name:"顧客カード作成",val:0},
+issuer1:{name:"イシュア不備（1次）",val:0},
+promo:{name:"販促物リスト作成",val:0},
+risk_tel:{name:"風控業務（電話）",val:0},
+sf:{name:"SF売り上げ導入",val:0},
+risk_mail:{name:"風控業務（メール）",val:0},
+ms:{name:"イシュア不備（M&S）",val:0},
+complain_tel:{name:"投诉业务（电话）",val:0},
+es:{name:"イシュア不備（ES）",val:0},
+complain_mail:{name:"投诉业务（邮件）",val:0},
+olc:{name:"OLC決済突合",val:0},
+haneda_trans:{name:"羽田翻译",val:0},
+jb:{name:"ジェイブリッツ案件",val:0},
+haneda_cs:{name:"羽田客服",val:0}
+
+}
+
+}
+
+
+function renderOffice(stats){
+
+let html=""
+
+for(const k in stats){
+
+html+=`
+<div class="officeCard">
+<div>${stats[k].name}</div>
+<div>${stats[k].val}</div>
+</div>
+`
+
+}
+
+document.getElementById("officeStats").innerHTML=html
+
+}
+
+
+function drawOfficeChart(stats){
+
+let labels=[]
+let values=[]
+
+for(const k in stats){
+labels.push(stats[k].name)
+values.push(stats[k].val)
+}
+
+if(officeChart) officeChart.destroy()
+
+officeChart=new Chart(document.getElementById("officeChart"),{
+type:"bar",
+data:{
+labels:labels,
+datasets:[{
+data:values,
+backgroundColor:"#3b4a66"
+}]
+},
+plugins:[ChartDataLabels],
+options:{
+plugins:{
+legend:{display:false},
+datalabels:{anchor:"end",align:"top"}
+},
+scales:{y:{beginAtZero:true}}
+}
+})
+
+}
+
+
+function drawCallChart(data){
+
+let map={}
+
+data.forEach(r=>{
+
+let calls=calcCalls(r)
+
+if(!map[r.date]) map[r.date]=0
+
+map[r.date]+=calls
+
+})
+
+let labels=Object.keys(map)
+let values=Object.values(map)
+
+if(callChart) callChart.destroy()
+
+callChart=new Chart(document.getElementById("callChart"),{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+data:values,
+borderColor:"#3b4a66",
+borderWidth:3,
+tension:0.3,
+fill:false
+}]
+},
+plugins:[ChartDataLabels],
+options:{
+plugins:{
+legend:{display:false},
+datalabels:{align:"top"}
+},
+scales:{y:{beginAtZero:true}}
+}
+})
+
+}
+
+
+async function loadByDate(){
+
+let date=document.getElementById("date").value
+
+let {data}=await supabaseClient
+.from("op_daily")
+.select("*")
+.eq("date",date)
+
+render(data)
+
+}
+
+
+async function loadByMonth(){
+
+let month=document.getElementById("month").value
+
+let start=month+"-01"
+let end=month+"-31"
+
+let {data}=await supabaseClient
+.from("op_daily")
+.select("*")
+.gte("date",start)
+.lte("date",end)
+
+render(data)
+
+}
+
+
+function render(data){
+
+let officeStats=createOfficeStats()
+
+let inbound=0
+let totalCalls=0
+let connected=0
+let answered=0
+
+let opMap={}
+
+if(data){
+
+data.forEach(r=>{
+
+let calls=calcCalls(r)
+let validAns=calcValidAnswered(r)
+
+let inboundCall=Number(r.inbound_answered||0)
+let conn=Number(r.inbound_connect||0)
+
+inbound+=inboundCall
+totalCalls+=calls
+connected+=conn
+answered+=validAns
+
+if(!opMap[r.op_name]){
+
+opMap[r.op_name]={inbound:0,calls:0,conn:0,ans:0}
+
+}
+
+opMap[r.op_name].inbound+=inboundCall
+opMap[r.op_name].calls+=calls
+opMap[r.op_name].conn+=conn
+opMap[r.op_name].ans+=validAns
+
+for(const k in officeStats){
+officeStats[k].val+=Number(r[k])||0
+}
+
+})
+
+}
+
+let rate=totalCalls?Math.round(connected/totalCalls*100):0
+let validRate=totalCalls?Math.round(answered/totalCalls*100):0
+
+document.getElementById("inbound").innerText=inbound
+document.getElementById("totalCalls").innerText=totalCalls
+document.getElementById("connected").innerText=connected
+document.getElementById("answered").innerText=answered
+document.getElementById("rate").innerText=rate+"%"
+document.getElementById("validRate").innerText=validRate+"%"
+
+let html=""
+
+for(const op in opMap){
+
+let i=opMap[op].inbound
+let c=opMap[op].calls
+let conn=opMap[op].conn
+let a=opMap[op].ans
+
+let r=c?Math.round(conn/c*100):0
+let vr=c?Math.round(a/c*100):0
+
+html+=`
+<tr>
+<td>${op}</td>
+<td>${i}</td>
+<td>${c}</td>
+<td>${conn}</td>
+<td>${a}</td>
+<td>${r}%</td>
+<td>${vr}%</td>
+</tr>
+`
+
+}
+
+document.getElementById("opTable").innerHTML=html
+
+renderOffice(officeStats)
+drawOfficeChart(officeStats)
+
+if(data) drawCallChart(data)
+
+}
+
+renderOffice(createOfficeStats())
+
+</script>
+
+</body>
+</html>
+
