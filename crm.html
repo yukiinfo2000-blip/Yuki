@@ -239,7 +239,6 @@ margin-top:4px;
 <div class="sectionTitle">事务作业统计</div>
 <div class="officeGrid" id="officeStats"></div>
 
-
 <script>
 
 const SUPABASE_URL="https://ieijoczgnndiqmowadty.supabase.co"
@@ -281,9 +280,7 @@ Number(r.condition_answered||0)
 
 
 function createOfficeStats(){
-
 return{
-
 list_kaitsu:{name:"開通リスト更新",val:0},
 mail_list:{name:"メルマガリスト",val:0},
 list_fubi:{name:"不備リスト更新",val:0},
@@ -302,29 +299,21 @@ olc:{name:"OLC決済突合",val:0},
 haneda_trans:{name:"羽田翻译",val:0},
 jb:{name:"ジェイブリッツ案件",val:0},
 haneda_cs:{name:"羽田客服",val:0}
-
 }
-
 }
 
 
 function renderOffice(stats){
-
 let html=""
-
 for(const k in stats){
-
 html+=`
 <div class="officeCard">
 <div>${stats[k].name}</div>
 <div>${stats[k].val}</div>
 </div>
 `
-
 }
-
 document.getElementById("officeStats").innerHTML=html
-
 }
 
 
@@ -358,7 +347,6 @@ datalabels:{anchor:"end",align:"top"}
 scales:{y:{beginAtZero:true}}
 }
 })
-
 }
 
 
@@ -367,13 +355,9 @@ function drawCallChart(data){
 let map={}
 
 data.forEach(r=>{
-
 let calls=calcCalls(r)
-
 if(!map[r.date]) map[r.date]=0
-
 map[r.date]+=calls
-
 })
 
 let labels=Object.keys(map)
@@ -402,21 +386,6 @@ datalabels:{align:"top"}
 scales:{y:{beginAtZero:true}}
 }
 })
-
-}
-
-
-async function loadByDate(){
-
-let date=document.getElementById("date").value
-
-let {data}=await supabaseClient
-.from("op_daily")
-.select("*")
-.eq("date",date)
-
-render(data)
-
 }
 
 
@@ -424,17 +393,22 @@ async function loadByMonth(){
 
 let month=document.getElementById("month").value
 
-let start=month+"-01"
-let end=month+"-31"
+if(!month) return
+
+// ✅ 精确月份范围（避免31号bug）
+let start=new Date(month+"-01")
+let end=new Date(start.getFullYear(),start.getMonth()+1,0)
+
+let startStr=start.toISOString().slice(0,10)
+let endStr=end.toISOString().slice(0,10)
 
 let {data}=await supabaseClient
 .from("op_daily")
 .select("*")
-.gte("date",start)
-.lte("date",end)
+.gte("date",startStr)
+.lte("date",endStr)
 
 render(data)
-
 }
 
 
@@ -465,9 +439,7 @@ connected+=conn
 answered+=validAns
 
 if(!opMap[r.op_name]){
-
 opMap[r.op_name]={inbound:0,calls:0,conn:0,ans:0}
-
 }
 
 opMap[r.op_name].inbound+=inboundCall
@@ -516,7 +488,6 @@ html+=`
 <td>${vr}%</td>
 </tr>
 `
-
 }
 
 document.getElementById("opTable").innerHTML=html
@@ -528,9 +499,25 @@ if(data) drawCallChart(data)
 
 }
 
-renderOffice(createOfficeStats())
+
+// ✅ 页面加载自动执行
+window.onload=function(){
+
+// 获取当前月份
+let now=new Date()
+let month=now.toISOString().slice(0,7)
+
+// 填入input
+document.getElementById("month").value=month
+
+// 自动加载
+loadByMonth()
+
+}
 
 </script>
+
+
 
 </body>
 </html>
