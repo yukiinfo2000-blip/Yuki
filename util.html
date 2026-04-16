@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>稼动率看板</title>
+<title>稼动率看板（高级版）</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <style>
@@ -27,7 +28,7 @@ h1{
 }
 
 select,button{
-    padding:5px 10px;
+    padding:6px 12px;
     margin:5px;
 }
 
@@ -46,22 +47,27 @@ select,button{
     margin-bottom:15px;
 }
 
-/* 4图 */
+/* 网格 */
 .grid{
     display:grid;
     grid-template-columns: repeat(2,1fr);
     gap:22px;
 }
 
+/* 卡片 */
 .card{
     background:#DDE3E8;
     padding:18px;
     border-radius:14px;
     height:360px;
+    transition:all .3s;
 }
 
-.card:nth-child(even){
-    background:#CCD5DD;
+/* 当前月高亮 */
+.card.active{
+    transform:scale(1.05);
+    background:#F5F8FB;
+    box-shadow:0 10px 30px rgba(0,0,0,0.15);
 }
 
 .card canvas{
@@ -71,8 +77,10 @@ select,button{
 .title{
     text-align:center;
     margin-bottom:5px;
+    font-weight:bold;
 }
 </style>
+
 </head>
 
 <body>
@@ -80,20 +88,20 @@ select,button{
 <h1>2026年稼动率看板</h1>
 
 <div class="filter">
-    开始月份：
-    <select id="startMonth"></select>
-    结束月份：
-    <select id="endMonth"></select>
-    <button onclick="search()">查询</button>
+开始月份：
+<select id="startMonth"></select>
+结束月份：
+<select id="endMonth"></select>
+<button onclick="search()">查询</button>
 </div>
 
 <div class="wrapper">
 
-    <div class="year-chart">
-        <canvas id="yearChart"></canvas>
-    </div>
+<div class="year-chart">
+<canvas id="yearChart"></canvas>
+</div>
 
-    <div class="grid" id="charts"></div>
+<div class="grid" id="charts"></div>
 
 </div>
 
@@ -101,9 +109,10 @@ select,button{
 const URL="https://ieijoczgnndiqmowadty.supabase.co";
 const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg";
 
-Chart.defaults.font.family="'Segoe UI','Microsoft YaHei'";
-
 let allData=[];
+let today=new Date();
+
+Chart.defaults.font.family="'Segoe UI','Microsoft YaHei'";
 
 /* 获取数据 */
 async function getData(){
@@ -132,12 +141,10 @@ function gradient(ctx,color){
     return g;
 }
 
-/* 图表 */
-function createChart(canvas,labels,real,forecast,isYear=false){
+/* 创建图 */
+function createChart(canvas,labels,real,forecast,highlightIndex){
 
     let ctx=canvas.getContext("2d");
-
-    let startIndex=real.findIndex(v=>v===null);
 
     new Chart(canvas,{
         type:'line',
@@ -150,11 +157,16 @@ function createChart(canvas,labels,real,forecast,isYear=false){
                     backgroundColor:gradient(ctx,"rgba(74,108,140,0.3)"),
                     fill:true,
                     tension:0.35,
-                    pointRadius:4,
-                    pointHoverRadius:7,
-                    pointBackgroundColor:'#4A6C8C',
-                    pointBorderColor:'#fff',
-                    pointBorderWidth:2
+
+                    pointRadius:ctx=>{
+                        return ctx.dataIndex===highlightIndex?8:4;
+                    },
+
+                    pointBackgroundColor:ctx=>{
+                        return ctx.dataIndex===highlightIndex?'#FFD700':'#4A6C8C';
+                    },
+
+                    pointHoverRadius:10
                 },
                 {
                     data:forecast,
@@ -164,15 +176,18 @@ function createChart(canvas,labels,real,forecast,isYear=false){
                     borderDash:[6,6],
                     tension:0.35,
                     pointRadius:4,
-                    pointHoverRadius:7,
-                    pointBackgroundColor:'#C06C6C',
-                    pointBorderColor:'#fff',
-                    pointBorderWidth:2
+                    pointHoverRadius:10
                 }
             ]
         },
         options:{
             maintainAspectRatio:false,
+
+            interaction:{
+                mode:'nearest',
+                intersect:false
+            },
+
             plugins:{
                 legend:{display:false},
 
@@ -181,23 +196,15 @@ function createChart(canvas,labels,real,forecast,isYear=false){
                     align:'top',
                     formatter:v=>{
                         if(!v) return "";
-                        return isYear ? Math.round(v)+"%" : v.toFixed(1)+"%";
+                        return v.toFixed(1)+"%";
                     }
-                },
-
-                annotation:{
-                    annotations:startIndex!=-1?{
-                        box:{
-                            type:'box',
-                            xMin:startIndex,
-                            xMax:labels.length,
-                            backgroundColor:'rgba(150,150,150,0.15)'
-                        }
-                    }:{}
                 }
             },
+
             scales:{
-                y:{ticks:{callback:v=>v+"%"}}
+                y:{
+                    ticks:{callback:v=>v+"%"}
+                }
             }
         },
         plugins:[ChartDataLabels]
@@ -207,7 +214,8 @@ function createChart(canvas,labels,real,forecast,isYear=false){
 /* 年度图 */
 function drawYear(data){
 
-    let real=[],forecast=[],labels=[];
+    let labels=[],real=[],forecast=[];
+    let nowMonth=today.getMonth()+1;
 
     for(let m=1;m<=12;m++){
 
@@ -219,7 +227,7 @@ function drawYear(data){
 
         labels.push(m+"月");
 
-        if(arr.some(d=>d.is_forecast)){
+        if(m>nowMonth){
             real.push(null);
             forecast.push(avg);
         }else{
@@ -233,15 +241,19 @@ function drawYear(data){
         labels,
         real,
         forecast,
-        true
+        nowMonth-1
     );
 }
 
 /* 月图 */
-function drawMonth(month,data,i){
+function drawMonth(month,data){
 
     let box=document.createElement("div");
     box.className="card";
+
+    if(month===today.getMonth()+1){
+        box.classList.add("active");
+    }
 
     let t=document.createElement("div");
     t.className="title";
@@ -251,24 +263,39 @@ function drawMonth(month,data,i){
 
     box.appendChild(t);
     box.appendChild(canvas);
-    document.getElementById("charts").appendChild(box);
+    charts.appendChild(box);
+
+    // 排序
+    data.sort((a,b)=> new Date(a.stat_date)-new Date(b.stat_date));
 
     let labels=[],real=[],forecast=[];
+    let highlightIndex=-1;
 
-    data.forEach(d=>{
-        let day=new Date(d.stat_date).getDate();
+    data.forEach((d,i)=>{
+        let date=new Date(d.stat_date);
+        let day=date.getDate();
+
         labels.push(day);
 
-        if(d.is_forecast){
+        if(date > today){
             real.push(null);
             forecast.push(d.utilization);
         }else{
             real.push(d.utilization);
             forecast.push(null);
         }
+
+        // 标记今天
+        if(
+            date.getFullYear()===today.getFullYear() &&
+            date.getMonth()===today.getMonth() &&
+            date.getDate()===today.getDate()
+        ){
+            highlightIndex=i;
+        }
     });
 
-    createChart(canvas,labels,real,forecast,false);
+    createChart(canvas,labels,real,forecast,highlightIndex);
 }
 
 /* 初始化下拉 */
@@ -279,7 +306,7 @@ function initSelect(){
         endMonth.add(new Option(i+"月",i));
     }
 
-    let now=new Date().getMonth()+1;
+    let now=today.getMonth()+1;
     startMonth.value=Math.max(1,now-2);
     endMonth.value=Math.min(12,parseInt(startMonth.value)+3);
 }
@@ -300,7 +327,6 @@ function search(){
 function render(s,e){
 
     charts.innerHTML="";
-
     let g=group(allData);
 
     for(let m=s;m<=e;m++){
@@ -317,7 +343,7 @@ async function init(){
 
     initSelect();
 
-    let now=new Date().getMonth()+1;
+    let now=today.getMonth()+1;
     let s=Math.max(1,now-2);
     let e=Math.min(12,s+3);
 
