@@ -1,243 +1,749 @@
 <!DOCTYPE html>
-
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<title>稼动率看板（高级版）</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>2026 稼动率 Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <style>
-body{
+
+:root{
+
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --border:#e7ebf2;
+
+    --text:#18253d;
+    --sub:#7d8799;
+
+    --blue:#5c93ff;
+    --green:#62c26f;
+    --red:#ff6b6b;
+
+    --shadow:
+    0 2px 10px rgba(15,23,42,0.04);
+}
+
+*{
     margin:0;
-    font-family:"Segoe UI","Microsoft YaHei";
-    background:#F4F6F8;
+    padding:0;
+    box-sizing:border-box;
 }
 
-h1{
-    text-align:center;
-    padding:10px;
+body{
+
+    background:var(--bg);
+
+    font-family:
+    "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
+
+    color:var(--text);
+
+    padding:14px;
 }
 
-/* 查询栏 */
-.filter{
-    text-align:center;
+/* =========================
+   HEADER
+========================= */
+
+.header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    gap:12px;
+
+    margin-bottom:14px;
+}
+
+.header-left h1{
+
+    font-size:28px;
+
+    font-weight:800;
+
+    line-height:1;
+}
+
+.header-left p{
+
+    margin-top:4px;
+
+    color:var(--sub);
+
+    font-size:11px;
+}
+
+.header-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+}
+
+.header-card{
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    padding:10px 14px;
+
+    box-shadow:var(--shadow);
+}
+
+.header-label{
+
+    font-size:10px;
+
+    color:var(--sub);
+
+    margin-bottom:4px;
+}
+
+select{
+
+    height:38px;
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    background:#fff;
+
+    padding:0 12px;
+
+    font-size:12px;
+
+    color:#111827;
+
+    min-width:100px;
+}
+
+button{
+
+    height:38px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#1d3c78;
+
+    color:#fff;
+
+    padding:0 18px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:0.2s;
+}
+
+button:hover{
+
+    opacity:0.92;
+}
+
+/* =========================
+   WRAPPER
+========================= */
+
+.wrapper{
+
+    width:100%;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.card{
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:14px;
+
+    padding:14px;
+
+    box-shadow:var(--shadow);
+}
+
+/* =========================
+   YEAR CHART
+========================= */
+
+.year-card{
+
+    margin-bottom:14px;
+}
+
+.year-title{
+
+    font-size:15px;
+
+    font-weight:800;
+
     margin-bottom:10px;
 }
 
-select,button{
-    padding:6px 12px;
-    margin:5px;
-}
-
-/* 容器 */
-.wrapper{
-    width:72%;
-    margin:auto;
-}
-
-/* 年度图 */
 .year-chart{
-    background:#E9EEF2;
-    height:220px;
-    padding:12px;
-    border-radius:12px;
-    margin-bottom:15px;
+
+    height:240px;
 }
 
-/* 网格 */
+/* =========================
+   GRID
+========================= */
+
 .grid{
+
     display:grid;
-    grid-template-columns: repeat(2,1fr);
-    gap:22px;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:14px;
 }
 
-/* 卡片 */
-.card{
-    background:#DDE3E8;
-    padding:18px;
-    border-radius:14px;
-    height:360px;
-    transition:all .3s;
+/* =========================
+   MONTH CARD
+========================= */
+
+.month-card{
+
+    position:relative;
+
+    transition:0.25s;
 }
 
-/* 当前月高亮 */
-.card.active{
-    transform:scale(1.05);
-    background:#F5F8FB;
-    box-shadow:0 10px 30px rgba(0,0,0,0.15);
+.month-card.active{
+
+    border:1px solid rgba(92,147,255,0.25);
+
+    box-shadow:
+    0 8px 24px rgba(92,147,255,0.12);
+
+    transform:translateY(-2px);
 }
 
-.card canvas{
-    height:280px !important;
+.month-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:10px;
 }
 
-.title{
-    text-align:center;
-    margin-bottom:5px;
-    font-weight:bold;
+.month-title{
+
+    font-size:14px;
+
+    font-weight:800;
 }
+
+.month-badge{
+
+    font-size:10px;
+
+    color:#fff;
+
+    background:var(--blue);
+
+    padding:4px 8px;
+
+    border-radius:999px;
+}
+
+.chart-box{
+
+    height:220px;
+}
+
+/* =========================
+   FOOTER INFO
+========================= */
+
+.info-row{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:10px;
+
+    margin-top:10px;
+}
+
+.info-box{
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    padding:10px 12px;
+
+    background:#fff;
+}
+
+.info-label{
+
+    font-size:10px;
+
+    color:var(--sub);
+
+    margin-bottom:4px;
+}
+
+.info-value{
+
+    font-size:18px;
+
+    font-weight:800;
+}
+
+.info-value.blue{
+
+    color:var(--blue);
+}
+
+.info-value.green{
+
+    color:var(--green);
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:1100px){
+
+    .grid{
+
+        grid-template-columns:1fr;
+    }
+
+    .header{
+
+        flex-direction:column;
+    }
+
+    .header-right{
+
+        width:100%;
+    }
+}
+
 </style>
-
 </head>
 
 <body>
 
-<h1>2026年稼动率看板</h1>
+<!-- HEADER -->
 
-<div class="filter">
-开始月份：
-<select id="startMonth"></select>
-结束月份：
-<select id="endMonth"></select>
-<button onclick="search()">查询</button>
+<div class="header">
+
+    <div class="header-left">
+
+        <h1>
+            2026 稼动率 Dashboard
+        </h1>
+
+        <p>
+            Utilization Performance Overview
+        </p>
+
+    </div>
+
+    <div class="header-right">
+
+        <div class="header-card">
+
+            <div class="header-label">
+                开始月份
+            </div>
+
+            <select id="startMonth"></select>
+
+        </div>
+
+        <div class="header-card">
+
+            <div class="header-label">
+                结束月份
+            </div>
+
+            <select id="endMonth"></select>
+
+        </div>
+
+        <button onclick="search()">
+            ↻ 查询数据
+        </button>
+
+    </div>
+
 </div>
 
 <div class="wrapper">
 
-<div class="year-chart">
-<canvas id="yearChart"></canvas>
-</div>
+    <!-- YEAR -->
 
-<div class="grid" id="charts"></div>
+    <div class="card year-card">
+
+        <div class="year-title">
+            年度稼动率走势
+        </div>
+
+        <div class="year-chart">
+            <canvas id="yearChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- MONTH GRID -->
+
+    <div class="grid" id="charts"></div>
 
 </div>
 
 <script>
+
 const URL="https://ieijoczgnndiqmowadty.supabase.co";
 const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg";
 
 let allData=[];
+
 let today=new Date();
 
-Chart.defaults.font.family="'Segoe UI','Microsoft YaHei'";
+Chart.defaults.font.family =
+"'Segoe UI','Microsoft YaHei'";
 
-/* 获取数据 */
+Chart.defaults.color = "#6b7280";
+
+/* =========================
+   FETCH
+========================= */
+
 async function getData(){
-    let res=await fetch(`${URL}/rest/v1/utilization_daily?select=*`,{
-        headers:{apikey:KEY,Authorization:"Bearer "+KEY}
-    });
+
+    let res =
+    await fetch(
+        `${URL}/rest/v1/utilization_daily?select=*`,
+        {
+            headers:{
+                apikey:KEY,
+                Authorization:"Bearer "+KEY
+            }
+        }
+    );
+
     return await res.json();
 }
 
-/* 分组 */
+/* =========================
+   GROUP
+========================= */
+
 function group(data){
+
     let m={};
+
     data.forEach(d=>{
-        let month=new Date(d.stat_date).getMonth()+1;
-        if(!m[month]) m[month]=[];
+
+        let month =
+        new Date(d.stat_date).getMonth()+1;
+
+        if(!m[month]){
+
+            m[month]=[];
+        }
+
         m[month].push(d);
     });
+
     return m;
 }
 
-/* 渐变 */
+/* =========================
+   GRADIENT
+========================= */
+
 function gradient(ctx,color){
-    let g=ctx.createLinearGradient(0,0,0,300);
+
+    let g =
+    ctx.createLinearGradient(0,0,0,260);
+
     g.addColorStop(0,color);
-    g.addColorStop(1,"rgba(255,255,255,0)");
+
+    g.addColorStop(
+        1,
+        "rgba(255,255,255,0)"
+    );
+
     return g;
 }
 
-/* 创建图 */
-function createChart(canvas,labels,real,forecast,highlightIndex){
+/* =========================
+   CREATE CHART
+========================= */
 
-    let ctx=canvas.getContext("2d");
+function createChart(
+    canvas,
+    labels,
+    real,
+    forecast,
+    highlightIndex
+){
+
+    let ctx =
+    canvas.getContext("2d");
 
     new Chart(canvas,{
+
         type:'line',
+
         data:{
+
             labels,
+
             datasets:[
+
                 {
+                    label:'实际',
+
                     data:real,
-                    borderColor:'#4A6C8C',
-                    backgroundColor:gradient(ctx,"rgba(74,108,140,0.3)"),
+
+                    borderColor:'#5c93ff',
+
+                    backgroundColor:
+                    gradient(
+                        ctx,
+                        "rgba(92,147,255,0.18)"
+                    ),
+
                     fill:true,
+
                     tension:0.35,
 
-                    pointRadius:ctx=>{
-                        return ctx.dataIndex===highlightIndex?8:4;
+                    borderWidth:2,
+
+                    pointRadius:(c)=>{
+
+                        return c.dataIndex === highlightIndex
+                        ? 6
+                        : 3;
                     },
 
-                    pointBackgroundColor:ctx=>{
-                        return ctx.dataIndex===highlightIndex?'#FFD700':'#4A6C8C';
+                    pointBackgroundColor:(c)=>{
+
+                        return c.dataIndex === highlightIndex
+                        ? '#ff6b6b'
+                        : '#5c93ff';
                     },
 
-                    pointHoverRadius:10
+                    pointBorderWidth:2,
+
+                    pointBorderColor:'#fff'
                 },
+
                 {
+                    label:'未来',
+
                     data:forecast,
-                    borderColor:'#C06C6C',
-                    backgroundColor:gradient(ctx,"rgba(192,108,108,0.3)"),
+
+                    borderColor:'#ff6b6b',
+
+                    backgroundColor:
+                    gradient(
+                        ctx,
+                        "rgba(255,107,107,0.10)"
+                    ),
+
                     fill:true,
+
                     borderDash:[6,6],
+
                     tension:0.35,
-                    pointRadius:4,
-                    pointHoverRadius:10
+
+                    borderWidth:2,
+
+                    pointRadius:3,
+
+                    pointBackgroundColor:'#fff',
+
+                    pointBorderColor:'#ff6b6b',
+
+                    pointBorderWidth:1.5
                 }
             ]
         },
+
         options:{
+
             maintainAspectRatio:false,
 
             interaction:{
-                mode:'nearest',
+                mode:'index',
                 intersect:false
             },
 
             plugins:{
-                legend:{display:false},
+
+                legend:{
+
+                    position:'top',
+
+                    align:'start',
+
+                    labels:{
+
+                        boxWidth:10,
+
+                        usePointStyle:true,
+
+                        pointStyle:'circle',
+
+                        font:{
+                            size:10
+                        }
+                    }
+                },
 
                 datalabels:{
-                    anchor:'end',
+
                     align:'top',
+
+                    anchor:'end',
+
+                    color:'#4b5563',
+
+                    font:{
+                        size:9,
+                        weight:'700'
+                    },
+
                     formatter:v=>{
-                        if(!v) return "";
-                        return v.toFixed(1)+"%";
+
+                        if(!v) return '';
+
+                        return v.toFixed(1)+'%';
                     }
                 }
             },
 
             scales:{
+
+                x:{
+
+                    grid:{
+                        color:'#eef2f7'
+                    },
+
+                    ticks:{
+                        font:{
+                            size:9
+                        }
+                    }
+                },
+
                 y:{
-                    ticks:{callback:v=>v+"%"}
+
+                    beginAtZero:true,
+
+                    grid:{
+                        color:'#eef2f7'
+                    },
+
+                    ticks:{
+
+                        callback:v=>v+'%',
+
+                        font:{
+                            size:9
+                        }
+                    }
                 }
             }
         },
+
         plugins:[ChartDataLabels]
     });
 }
 
-/* 年度图 */
+/* =========================
+   YEAR CHART
+========================= */
+
 function drawYear(data){
 
-    let labels=[],real=[],forecast=[];
-    let nowMonth=today.getMonth()+1;
+    let labels=[];
+    let real=[];
+    let forecast=[];
+
+    let nowMonth =
+    today.getMonth()+1;
 
     for(let m=1;m<=12;m++){
 
-        let arr=data.filter(d=>new Date(d.stat_date).getMonth()+1===m);
+        let arr =
+        data.filter(
+            d=>
+            new Date(d.stat_date)
+            .getMonth()+1===m
+        );
 
-        let avg=arr.length
-            ? arr.reduce((a,b)=>a+b.utilization,0)/arr.length
-            : null;
+        let avg =
+        arr.length
+        ?
+        arr.reduce(
+            (a,b)=>
+            a+b.utilization,
+            0
+        ) / arr.length
+        :
+        null;
 
-        labels.push(m+"月");
+        labels.push(m+'月');
 
         if(m>nowMonth){
+
             real.push(null);
+
             forecast.push(avg);
+
         }else{
+
             real.push(avg);
+
             forecast.push(null);
         }
     }
 
     createChart(
-        document.getElementById("yearChart"),
+        document.getElementById('yearChart'),
         labels,
         real,
         forecast,
@@ -245,112 +751,261 @@ function drawYear(data){
     );
 }
 
-/* 月图 */
+/* =========================
+   MONTH CARD
+========================= */
+
 function drawMonth(month,data){
 
-    let box=document.createElement("div");
-    box.className="card";
+    let box =
+    document.createElement("div");
+
+    box.className =
+    "card month-card";
 
     if(month===today.getMonth()+1){
+
         box.classList.add("active");
     }
 
-    let t=document.createElement("div");
-    t.className="title";
-    t.innerText=month+"月";
+    box.innerHTML =
 
-    let canvas=document.createElement("canvas");
+    `
+    <div class="month-header">
 
-    box.appendChild(t);
-    box.appendChild(canvas);
+        <div class="month-title">
+            ${month} 月
+        </div>
+
+        ${
+            month===today.getMonth()+1
+            ?
+            '<div class="month-badge">当前月</div>'
+            :
+            ''
+        }
+
+    </div>
+
+    <div class="chart-box">
+        <canvas></canvas>
+    </div>
+
+    <div class="info-row">
+
+        <div class="info-box">
+
+            <div class="info-label">
+                平均稼动率
+            </div>
+
+            <div class="info-value blue">
+                ${
+                    (
+                        data.reduce(
+                            (a,b)=>a+b.utilization,
+                            0
+                        ) / data.length
+                    ).toFixed(1)
+                }%
+            </div>
+
+        </div>
+
+        <div class="info-box">
+
+            <div class="info-label">
+                最大稼动率
+            </div>
+
+            <div class="info-value green">
+                ${
+                    Math.max(
+                        ...data.map(
+                            d=>d.utilization
+                        )
+                    ).toFixed(1)
+                }%
+            </div>
+
+        </div>
+
+    </div>
+    `;
+
     charts.appendChild(box);
 
-    // 排序
-    data.sort((a,b)=> new Date(a.stat_date)-new Date(b.stat_date));
+    let canvas =
+    box.querySelector("canvas");
 
-    let labels=[],real=[],forecast=[];
+    data.sort(
+        (a,b)=>
+        new Date(a.stat_date)
+        -
+        new Date(b.stat_date)
+    );
+
+    let labels=[];
+    let real=[];
+    let forecast=[];
+
     let highlightIndex=-1;
 
     data.forEach((d,i)=>{
-        let date=new Date(d.stat_date);
-        let day=date.getDate();
+
+        let date =
+        new Date(d.stat_date);
+
+        let day =
+        date.getDate();
 
         labels.push(day);
 
         if(date > today){
+
             real.push(null);
+
             forecast.push(d.utilization);
+
         }else{
+
             real.push(d.utilization);
+
             forecast.push(null);
         }
 
-        // 标记今天
         if(
-            date.getFullYear()===today.getFullYear() &&
-            date.getMonth()===today.getMonth() &&
+
+            date.getFullYear()===today.getFullYear()
+            &&
+            date.getMonth()===today.getMonth()
+            &&
             date.getDate()===today.getDate()
+
         ){
+
             highlightIndex=i;
         }
     });
 
-    createChart(canvas,labels,real,forecast,highlightIndex);
+    createChart(
+        canvas,
+        labels,
+        real,
+        forecast,
+        highlightIndex
+    );
 }
 
-/* 初始化下拉 */
+/* =========================
+   SELECT
+========================= */
+
 function initSelect(){
 
     for(let i=1;i<=12;i++){
-        startMonth.add(new Option(i+"月",i));
-        endMonth.add(new Option(i+"月",i));
+
+        startMonth.add(
+            new Option(i+"月",i)
+        );
+
+        endMonth.add(
+            new Option(i+"月",i)
+        );
     }
 
-    let now=today.getMonth()+1;
-    startMonth.value=Math.max(1,now-2);
-    endMonth.value=Math.min(12,parseInt(startMonth.value)+3);
+    let now =
+    today.getMonth()+1;
+
+    startMonth.value =
+    Math.max(1,now-2);
+
+    endMonth.value =
+    Math.min(
+        12,
+        parseInt(startMonth.value)+3
+    );
 }
 
-/* 查询 */
+/* =========================
+   SEARCH
+========================= */
+
 function search(){
 
-    let s=parseInt(startMonth.value);
-    let e=parseInt(endMonth.value);
+    let s =
+    parseInt(startMonth.value);
 
-    if(e<s){ alert("结束月份错误"); return;}
-    if(e-s>=4){ alert("最多4个月"); return;}
+    let e =
+    parseInt(endMonth.value);
+
+    if(e<s){
+
+        alert("结束月份错误");
+
+        return;
+    }
+
+    if(e-s>=4){
+
+        alert("最多显示4个月");
+
+        return;
+    }
 
     render(s,e);
 }
 
-/* 渲染 */
+/* =========================
+   RENDER
+========================= */
+
 function render(s,e){
 
     charts.innerHTML="";
-    let g=group(allData);
+
+    let g =
+    group(allData);
 
     for(let m=s;m<=e;m++){
-        if(g[m]) drawMonth(m,g[m]);
+
+        if(g[m]){
+
+            drawMonth(
+                m,
+                g[m]
+            );
+        }
     }
 }
 
-/* 初始化 */
+/* =========================
+   INIT
+========================= */
+
 async function init(){
 
-    allData=await getData();
+    allData =
+    await getData();
 
     drawYear(allData);
 
     initSelect();
 
-    let now=today.getMonth()+1;
-    let s=Math.max(1,now-2);
-    let e=Math.min(12,s+3);
+    let now =
+    today.getMonth()+1;
+
+    let s =
+    Math.max(1,now-2);
+
+    let e =
+    Math.min(12,s+3);
 
     render(s,e);
 }
 
 init();
+
 </script>
 
 </body>
