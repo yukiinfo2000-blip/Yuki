@@ -6,29 +6,30 @@
 
 <title>2026 KPI Dashboard</title>
 
-<!-- Echarts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-
-<!-- Supabase -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
 
 :root{
 
-    --bg:#f4f7fb;
+    --bg:#f5f7fb;
     --card:#ffffff;
-    --line:#e5e7eb;
-    --text:#0f172a;
-    --sub:#64748b;
+    --border:#e7ebf2;
 
-    --blue:#3b82f6;
-    --green:#22c55e;
-    --red:#ef4444;
+    --text:#18253d;
+    --sub:#7d8799;
+
+    --green:#62c26f;
+    --green-dark:#2f9e44;
+
+    --blue:#5c93ff;
+    --blue-dark:#2f67d8;
+
+    --line:#ff6b6b;
 
     --shadow:
-    0 10px 30px rgba(15,23,42,0.05);
-
+    0 2px 10px rgba(15,23,42,0.04);
 }
 
 *{
@@ -39,12 +40,7 @@
 
 body{
 
-    background:
-    linear-gradient(
-        180deg,
-        #f8fbff 0%,
-        #eef3f9 100%
-    );
+    background:var(--bg);
 
     font-family:
     "Segoe UI",
@@ -54,7 +50,7 @@ body{
 
     color:var(--text);
 
-    padding:24px;
+    padding:14px;
 }
 
 /* =========================
@@ -67,130 +63,118 @@ body{
 
     justify-content:space-between;
 
-    align-items:center;
+    align-items:flex-start;
 
-    gap:20px;
+    margin-bottom:14px;
 
-    margin-bottom:24px;
-
-    flex-wrap:wrap;
+    gap:12px;
 }
 
 .header-left h1{
 
-    font-size:44px;
+    font-size:28px;
 
     font-weight:800;
 
-    letter-spacing:-1px;
-
-    margin-bottom:6px;
+    line-height:1;
 }
 
 .header-left p{
 
+    margin-top:4px;
+
     color:var(--sub);
 
-    font-size:15px;
+    font-size:11px;
 }
 
 .header-right{
 
     display:flex;
 
+    gap:10px;
+
     align-items:center;
-
-    gap:14px;
-
-    flex-wrap:wrap;
 }
 
-.input-month{
+.header-card{
 
-    height:54px;
+    background:var(--card);
 
-    border:none;
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    padding:10px 14px;
+
+    min-width:150px;
+
+    box-shadow:var(--shadow);
+}
+
+.header-label{
+
+    font-size:10px;
+
+    color:var(--sub);
+
+    margin-bottom:3px;
+}
+
+.header-value{
+
+    font-size:13px;
+
+    font-weight:700;
+}
+
+.month-input{
+
+    height:40px;
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
 
     background:#fff;
 
-    padding:0 18px;
+    padding:0 14px;
 
-    border-radius:16px;
+    font-size:13px;
 
-    font-size:15px;
-
-    box-shadow:var(--shadow);
-
-    border:1px solid rgba(0,0,0,0.04);
+    color:#111827;
 }
 
-.load-btn{
+.reload-btn{
 
-    height:54px;
+    height:40px;
+
+    padding:0 18px;
 
     border:none;
 
-    padding:0 28px;
+    border-radius:10px;
 
-    border-radius:16px;
-
-    background:
-    linear-gradient(
-        135deg,
-        #1e3a8a,
-        #2563eb
-    );
+    background:#1d3c78;
 
     color:#fff;
 
-    font-size:15px;
+    font-size:13px;
 
     font-weight:700;
 
     cursor:pointer;
 
     transition:0.2s;
-
-    box-shadow:
-    0 10px 20px rgba(37,99,235,0.25);
 }
 
-.load-btn:hover{
+.reload-btn:hover{
 
-    transform:translateY(-2px);
-}
-
-.update-box{
-
-    background:#fff;
-
-    padding:12px 18px;
-
-    border-radius:16px;
-
-    box-shadow:var(--shadow);
-
-    min-width:220px;
-}
-
-.update-label{
-
-    font-size:12px;
-
-    color:var(--sub);
-
-    margin-bottom:4px;
-}
-
-.update-value{
-
-    font-size:15px;
-
-    font-weight:700;
+    opacity:0.92;
 }
 
 /* =========================
-   DASHBOARD
+   GRID
 ========================= */
 
 .dashboard{
@@ -199,7 +183,7 @@ body{
 
     grid-template-columns:1fr 1fr;
 
-    gap:22px;
+    gap:12px;
 }
 
 .full{
@@ -212,50 +196,24 @@ body{
 
 .card{
 
-    background:rgba(255,255,255,0.88);
+    background:var(--card);
 
-    backdrop-filter:blur(10px);
+    border:1px solid var(--border);
 
-    border-radius:24px;
+    border-radius:14px;
 
-    padding:24px;
-
-    border:1px solid rgba(255,255,255,0.8);
+    padding:12px;
 
     box-shadow:var(--shadow);
-
-    position:relative;
-
-    overflow:hidden;
-}
-
-.card::before{
-
-    content:"";
-
-    position:absolute;
-
-    top:0;
-    left:0;
-
-    width:100%;
-    height:4px;
-
-    background:
-    linear-gradient(
-        90deg,
-        #3b82f6,
-        #22c55e
-    );
 }
 
 .card-title{
 
-    font-size:32px;
+    font-size:15px;
 
     font-weight:800;
 
-    margin-bottom:18px;
+    margin-bottom:8px;
 }
 
 /* =========================
@@ -266,7 +224,7 @@ body{
 
     width:100%;
 
-    height:380px;
+    height:190px;
 }
 
 /* =========================
@@ -279,71 +237,75 @@ body{
 
     grid-template-columns:1fr 1fr;
 
-    gap:16px;
+    gap:10px;
 
-    margin-top:18px;
+    margin-top:8px;
 }
 
 .total-box{
 
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    padding:10px 12px;
+
     background:#fff;
-
-    border-radius:18px;
-
-    padding:18px;
-
-    border:1px solid rgba(0,0,0,0.04);
-
-    box-shadow:
-    0 4px 14px rgba(0,0,0,0.04);
 }
 
 .total-label{
 
-    font-size:13px;
+    font-size:10px;
 
     color:var(--sub);
 
-    margin-bottom:8px;
+    margin-bottom:4px;
 }
 
 .total-value{
 
-    font-size:42px;
+    font-size:18px;
 
     font-weight:800;
-
-    line-height:1;
 }
 
-.blue{
-    color:#2563eb;
+.total-value.blue{
+    color:var(--blue-dark);
 }
 
-.green{
-    color:#16a34a;
+.total-value.green{
+    color:var(--green-dark);
+}
+
+.total-unit{
+
+    font-size:11px;
+
+    margin-left:3px;
+
+    color:#6b7280;
 }
 
 /* =========================
    REASON
 ========================= */
 
-.reason-box{
+.reason{
 
-    margin-top:20px;
+    margin-top:10px;
 
-    padding-top:18px;
+    border-top:1px dashed #d7dce5;
 
-    border-top:1px dashed #d1d5db;
+    padding-top:8px;
 }
 
 .reason-title{
 
-    font-size:18px;
+    font-size:11px;
 
     font-weight:700;
 
-    margin-bottom:14px;
+    margin-bottom:5px;
 }
 
 .reason-list{
@@ -352,135 +314,93 @@ body{
 
     flex-wrap:wrap;
 
-    gap:14px 26px;
+    gap:8px 18px;
 
     list-style:none;
 }
 
 .reason-list li{
 
-    color:#64748b;
+    font-size:10px;
 
-    font-size:14px;
+    color:#707b8f;
 }
 
 /* =========================
    RECALL
 ========================= */
 
-.recall-layout{
+.recall-wrap{
 
     display:grid;
 
-    grid-template-columns:1fr 320px;
+    grid-template-columns:1fr 300px;
 
-    gap:24px;
-
-    align-items:start;
+    gap:12px;
 }
 
 .recall-info{
 
+    border:1px solid var(--border);
+
+    border-radius:12px;
+
+    padding:14px;
+
     background:#fff;
-
-    border-radius:22px;
-
-    padding:22px;
-
-    border:1px solid rgba(0,0,0,0.05);
-
-    height:100%;
 }
 
 .recall-info h3{
 
-    font-size:28px;
+    font-size:14px;
 
-    margin-bottom:18px;
+    margin-bottom:10px;
 }
 
 .recall-line{
 
-    font-size:15px;
+    font-size:11px;
 
-    line-height:2;
+    line-height:1.9;
 
-    color:#475569;
+    color:#4b5563;
 }
 
-.separator{
+.divider{
 
     height:1px;
 
-    background:#d1d5db;
+    background:#d9dee7;
 
-    margin:20px 0;
-}
-
-/* =========================
-   STATUS
-========================= */
-
-.status{
-
-    position:fixed;
-
-    top:20px;
-    right:20px;
-
-    z-index:9999;
-
-    background:#fff;
-
-    padding:14px 18px;
-
-    border-radius:14px;
-
-    box-shadow:
-    0 10px 30px rgba(0,0,0,0.12);
-
-    display:none;
-
-    font-weight:700;
-}
-
-.success{
-
-    color:#16a34a;
-}
-
-.error{
-
-    color:#dc2626;
-}
-
-/* =========================
-   FOOTER
-========================= */
-
-.footer{
-
-    margin-top:20px;
-
-    color:#94a3b8;
-
-    font-size:13px;
+    margin:12px 0;
 }
 
 /* =========================
    MOBILE
 ========================= */
 
-@media(max-width:1200px){
+@media(max-width:1100px){
 
     .dashboard{
 
         grid-template-columns:1fr;
     }
 
-    .recall-layout{
+    .recall-wrap{
 
         grid-template-columns:1fr;
+    }
+
+    .header{
+
+        flex-direction:column;
+    }
+
+    .header-right{
+
+        width:100%;
+
+        flex-wrap:wrap;
     }
 }
 
@@ -489,8 +409,6 @@ body{
 
 <body>
 
-<div id="status" class="status"></div>
-
 <!-- HEADER -->
 
 <div class="header">
@@ -498,7 +416,7 @@ body{
     <div class="header-left">
 
         <h1>
-            开通业务 Dashboard
+            2026 KPI Dashboard
         </h1>
 
         <p>
@@ -509,28 +427,36 @@ body{
 
     <div class="header-right">
 
-        <input
-            type="month"
-            id="monthPicker"
-            class="input-month"
-        >
+        <div class="header-card">
+
+            <div class="header-label">
+                対象月の指定
+            </div>
+
+            <input
+                type="month"
+                id="monthPicker"
+                class="month-input"
+            >
+
+        </div>
 
         <button
-            class="load-btn"
+            class="reload-btn"
             onclick="loadDashboard()"
         >
             ↻ データ読込
         </button>
 
-        <div class="update-box">
+        <div class="header-card">
 
-            <div class="update-label">
+            <div class="header-label">
                 データ更新日時
             </div>
 
             <div
-                class="update-value"
-                id="lastUpdate"
+                class="header-value"
+                id="updateTime"
             >
                 -
             </div>
@@ -553,10 +479,7 @@ body{
             開通通知送信案件
         </div>
 
-        <div
-            id="chart1"
-            class="chart"
-        ></div>
+        <div id="chart1" class="chart"></div>
 
         <div class="total-grid">
 
@@ -566,11 +489,8 @@ body{
                     架電必要 総数
                 </div>
 
-                <div
-                    class="total-value blue"
-                    id="topTotal1"
-                >
-                    0
+                <div class="total-value green" id="top1">
+                    0<span class="total-unit">件</span>
                 </div>
 
             </div>
@@ -581,21 +501,18 @@ body{
                     架電不要 総数
                 </div>
 
-                <div
-                    class="total-value green"
-                    id="topTotal2"
-                >
-                    0
+                <div class="total-value blue" id="top2">
+                    0<span class="total-unit">件</span>
                 </div>
 
             </div>
 
         </div>
 
-        <div class="reason-box">
+        <div class="reason">
 
             <div class="reason-title">
-                架電不要理由
+                架電不要理由：
             </div>
 
             <ul class="reason-list">
@@ -621,10 +538,7 @@ body{
             ライセンス認証済み
         </div>
 
-        <div
-            id="chart2"
-            class="chart"
-        ></div>
+        <div id="chart2" class="chart"></div>
 
         <div class="total-grid">
 
@@ -634,11 +548,8 @@ body{
                     架電で認証済み 総数
                 </div>
 
-                <div
-                    class="total-value blue"
-                    id="licenseTotal1"
-                >
-                    0
+                <div class="total-value green" id="license1">
+                    0<span class="total-unit">件</span>
                 </div>
 
             </div>
@@ -649,11 +560,8 @@ body{
                     架電不要で認証済み 総数
                 </div>
 
-                <div
-                    class="total-value green"
-                    id="licenseTotal2"
-                >
-                    0
+                <div class="total-value blue" id="license2">
+                    0<span class="total-unit">件</span>
                 </div>
 
             </div>
@@ -670,10 +578,7 @@ body{
             決済済み
         </div>
 
-        <div
-            id="chart3"
-            class="chart"
-        ></div>
+        <div id="chart3" class="chart"></div>
 
         <div class="total-grid">
 
@@ -683,11 +588,8 @@ body{
                     架電で決済済み 総数
                 </div>
 
-                <div
-                    class="total-value blue"
-                    id="paymentTotal1"
-                >
-                    0
+                <div class="total-value green" id="payment1">
+                    0<span class="total-unit">件</span>
                 </div>
 
             </div>
@@ -698,11 +600,8 @@ body{
                     架電不要で決済済み 総数
                 </div>
 
-                <div
-                    class="total-value green"
-                    id="paymentTotal2"
-                >
-                    0
+                <div class="total-value blue" id="payment2">
+                    0<span class="total-unit">件</span>
                 </div>
 
             </div>
@@ -715,7 +614,7 @@ body{
 
     <div class="card full">
 
-        <div class="recall-layout">
+        <div class="recall-wrap">
 
             <div>
 
@@ -723,10 +622,7 @@ body{
                     ReCall
                 </div>
 
-                <div
-                    id="chart4"
-                    class="chart"
-                ></div>
+                <div id="chart4" class="chart"></div>
 
                 <div class="total-grid">
 
@@ -736,11 +632,8 @@ body{
                             件数 総数
                         </div>
 
-                        <div
-                            class="total-value blue"
-                            id="recallTotal1"
-                        >
-                            0
+                        <div class="total-value green" id="recall1">
+                            0<span class="total-unit">件</span>
                         </div>
 
                     </div>
@@ -751,11 +644,8 @@ body{
                             認証数 総数
                         </div>
 
-                        <div
-                            class="total-value green"
-                            id="recallTotal2"
-                        >
-                            0
+                        <div class="total-value blue" id="recall2">
+                            0<span class="total-unit">件</span>
                         </div>
 
                     </div>
@@ -778,23 +668,21 @@ body{
                     ステータス：7日間で未認証
                 </div>
 
-                <div class="separator"></div>
+                <div class="divider"></div>
 
                 <div class="recall-line">
-                    顧客コメント：
-                    MPM、後日で開店
+                    顧客コメント：MPM、後日で開店
                 </div>
 
                 <div class="recall-line">
-                    （例：5月以降開店、
-                    6月オープン予定など）
+                    （例：開店予定は5月以降、6月オープン予定など）
                 </div>
 
-                <div class="separator"></div>
+                <div class="divider"></div>
 
                 <div class="recall-line">
-                    対応施策：
-                    開店前後再度連絡予定
+                    対応施策：後日で開店顧客に対して、
+                    開店前後再連絡予定
                 </div>
 
             </div>
@@ -803,10 +691,6 @@ body{
 
     </div>
 
-</div>
-
-<div class="footer">
-    ※ 赤色点線は未来（予測）データです
 </div>
 
 <script>
@@ -831,48 +715,10 @@ supabase.createClient(
    CHART
 ========================= */
 
-const chart1 =
-echarts.init(
-    document.getElementById('chart1')
-);
-
-const chart2 =
-echarts.init(
-    document.getElementById('chart2')
-);
-
-const chart3 =
-echarts.init(
-    document.getElementById('chart3')
-);
-
-const chart4 =
-echarts.init(
-    document.getElementById('chart4')
-);
-
-/* =========================
-   STATUS
-========================= */
-
-function showStatus(message,type){
-
-    const box =
-    document.getElementById('status');
-
-    box.style.display = 'block';
-
-    box.className =
-    'status ' + type;
-
-    box.innerText = message;
-
-    setTimeout(()=>{
-
-        box.style.display = 'none';
-
-    },3000);
-}
+const chart1 = echarts.init(document.getElementById('chart1'));
+const chart2 = echarts.init(document.getElementById('chart2'));
+const chart3 = echarts.init(document.getElementById('chart3'));
+const chart4 = echarts.init(document.getElementById('chart4'));
 
 /* =========================
    TOTAL
@@ -891,7 +737,6 @@ function total(arr){
 ========================= */
 
 function createOption(
-    title,
     legend1,
     legend2,
     data1,
@@ -899,107 +744,100 @@ function createOption(
     months
 ){
 
-    const currentMonth =
-    new Date()
-    .toISOString()
-    .slice(0,7)
-    .replace('-','');
-
-    const forecastIndex =
-    months.findIndex(
-        m => m > currentMonth
+    const totalLine =
+    data1.map(
+        (v,i)=>v + data2[i]
     );
 
     return {
+
+        animation:false,
 
         tooltip:{
             trigger:'axis'
         },
 
         legend:{
-            top:0
+
+            top:0,
+
+            itemWidth:14,
+
+            itemHeight:8,
+
+            textStyle:{
+
+                fontSize:10,
+
+                color:'#6b7280'
+            },
+
+            data:[
+                legend1,
+                legend2,
+                '総数推移'
+            ]
         },
 
         grid:{
-            left:40,
-            right:20,
-            top:50,
-            bottom:40
+
+            left:28,
+
+            right:12,
+
+            top:30,
+
+            bottom:22
         },
 
         xAxis:{
+
             type:'category',
-            data:months
+
+            data:months,
+
+            axisLabel:{
+
+                fontSize:9,
+
+                color:'#667085'
+            },
+
+            axisLine:{
+                lineStyle:{
+                    color:'#c7d2e5'
+                }
+            },
+
+            axisTick:{
+                show:false
+            }
         },
 
         yAxis:{
-            type:'value'
+
+            type:'value',
+
+            max:60,
+
+            interval:10,
+
+            axisLabel:{
+
+                fontSize:9,
+
+                color:'#94a3b8'
+            },
+
+            splitLine:{
+
+                lineStyle:{
+                    color:'#eef2f7'
+                }
+            }
         },
 
         series:[
-
-            {
-                name:legend1,
-
-                type:'bar',
-
-                stack:'total',
-
-                barWidth:38,
-
-                itemStyle:{
-
-                    borderRadius:[6,6,0,0],
-
-                    color:(params)=>{
-
-                        if(
-                            params.dataIndex >=
-                            forecastIndex
-                        ){
-
-                            return '#ffe4e6';
-                        }
-
-                        return '#dbeafe';
-                    },
-
-                    borderColor:(params)=>{
-
-                        if(
-                            params.dataIndex >=
-                            forecastIndex
-                        ){
-
-                            return '#ef4444';
-                        }
-
-                        return '#60a5fa';
-                    },
-
-                    borderType:(params)=>{
-
-                        if(
-                            params.dataIndex >=
-                            forecastIndex
-                        ){
-
-                            return 'dashed';
-                        }
-
-                        return 'solid';
-                    },
-
-                    borderWidth:1.5
-                },
-
-                label:{
-                    show:true,
-                    position:'inside'
-                },
-
-                data:data1
-            },
 
             {
                 name:legend2,
@@ -1008,87 +846,88 @@ function createOption(
 
                 stack:'total',
 
-                barWidth:38,
+                barWidth:24,
+
+                label:{
+
+                    show:true,
+
+                    position:'inside',
+
+                    fontSize:9,
+
+                    color:'#fff',
+
+                    fontWeight:700
+                },
 
                 itemStyle:{
 
-                    borderRadius:[6,6,0,0],
-
-                    color:(params)=>{
-
-                        if(
-                            params.dataIndex >=
-                            forecastIndex
-                        ){
-
-                            return '#fef3c7';
-                        }
-
-                        return '#dcfce7';
-                    },
-
-                    borderColor:(params)=>{
-
-                        if(
-                            params.dataIndex >=
-                            forecastIndex
-                        ){
-
-                            return '#ef4444';
-                        }
-
-                        return '#22c55e';
-                    },
-
-                    borderType:(params)=>{
-
-                        if(
-                            params.dataIndex >=
-                            forecastIndex
-                        ){
-
-                            return 'dashed';
-                        }
-
-                        return 'solid';
-                    },
-
-                    borderWidth:1.5
-                },
-
-                label:{
-                    show:true,
-                    position:'inside'
+                    color:'#5c93ff',
+                    borderRadius:[0,0,2,2]
                 },
 
                 data:data2
             },
 
             {
+                name:legend1,
+
+                type:'bar',
+
+                stack:'total',
+
+                barWidth:24,
+
+                label:{
+
+                    show:true,
+
+                    position:'inside',
+
+                    fontSize:9,
+
+                    color:'#fff',
+
+                    fontWeight:700
+                },
+
+                itemStyle:{
+
+                    color:'#62c26f',
+                    borderRadius:[2,2,0,0]
+                },
+
+                data:data1
+            },
+
+            {
+                name:'総数推移',
+
                 type:'line',
 
                 smooth:true,
 
                 symbol:'circle',
 
-                symbolSize:7,
+                symbolSize:5,
 
                 lineStyle:{
 
-                    width:2,
+                    width:1.8,
 
-                    color:(forecastIndex !== -1)
-                    ? '#ef4444'
-                    : '#22c55e',
+                    type:'dashed',
 
-                    type:(forecastIndex !== -1)
-                    ? 'dashed'
-                    : 'solid'
+                    color:'#ff6b6b'
                 },
 
-                data:data1.map(
-                    (v,i)=>v + data2[i]
-                )
+                itemStyle:{
+                    color:'#ffffff',
+                    borderColor:'#ff6b6b',
+                    borderWidth:1.5
+                },
+
+                data:totalLine
             }
 
         ]
@@ -1096,203 +935,156 @@ function createOption(
 }
 
 /* =========================
-   LOAD DATA
+   LOAD
 ========================= */
 
 async function loadDashboard(){
 
-    try{
-
-        const { data,error } =
-        await supabaseClient
-        .from('monthly_kpi_summary')
-        .select('*')
-        .order(
-            'target_month',
-            {
-                ascending:true
-            }
-        );
-
-        if(error){
-
-            showStatus(
-                error.message,
-                'error'
-            );
-
-            return;
+    const { data,error } =
+    await supabaseClient
+    .from('monthly_kpi_summary')
+    .select('*')
+    .order(
+        'target_month',
+        {
+            ascending:true
         }
+    );
 
-        if(!data || data.length === 0){
+    if(error){
 
-            showStatus(
-                'データなし',
-                'error'
-            );
+        alert(error.message);
 
-            return;
-        }
+        return;
+    }
 
-        const months =
-        data.map(
-            item=>item.target_month
-        );
+    const months =
+    data.map(
+        d=>d.target_month
+    );
 
-        const callRequired =
-        data.map(
-            item=>item.call_required_count
-        );
+    const call1 =
+    data.map(
+        d=>d.call_required_count
+    );
 
-        const callUnnecessary =
-        data.map(
-            item=>item.call_unnecessary_count
-        );
+    const call2 =
+    data.map(
+        d=>d.call_unnecessary_count
+    );
 
-        const authCall =
-        data.map(
-            item=>item.auth_by_call_count
-        );
+    const auth1 =
+    data.map(
+        d=>d.auth_by_call_count
+    );
 
-        const authNoCall =
-        data.map(
-            item=>item.auth_without_call_count
-        );
+    const auth2 =
+    data.map(
+        d=>d.auth_without_call_count
+    );
 
-        const paymentCall =
-        data.map(
-            item=>item.payment_by_call_count
-        );
+    const pay1 =
+    data.map(
+        d=>d.payment_by_call_count
+    );
 
-        const paymentNoCall =
-        data.map(
-            item=>item.payment_without_call_count
-        );
+    const pay2 =
+    data.map(
+        d=>d.payment_without_call_count
+    );
 
-        const recallCount =
-        data.map(
-            item=>item.recall_case_count
-        );
+    const recall1 =
+    data.map(
+        d=>d.recall_case_count
+    );
 
-        const recallAuth =
-        data.map(
-            item=>item.recall_auth_count
-        );
+    const recall2 =
+    data.map(
+        d=>d.recall_auth_count
+    );
 
-        /* CHART */
+    chart1.setOption(
+        createOption(
+            '架電必要',
+            '架電不要',
+            call1,
+            call2,
+            months
+        )
+    );
 
-        chart1.setOption(
-            createOption(
-                '開通通知送信案件',
-                '架電必要',
-                '架電不要',
-                callRequired,
-                callUnnecessary,
-                months
-            )
-        );
+    chart2.setOption(
+        createOption(
+            '架電で認証済み',
+            '架電不要で認証済み',
+            auth1,
+            auth2,
+            months
+        )
+    );
 
-        chart2.setOption(
-            createOption(
-                'ライセンス認証済み',
-                '架電で認証済み',
-                '架電不要で認証済み',
-                authCall,
-                authNoCall,
-                months
-            )
-        );
+    chart3.setOption(
+        createOption(
+            '架電で決済済み',
+            '架電不要で決済済み',
+            pay1,
+            pay2,
+            months
+        )
+    );
 
-        chart3.setOption(
-            createOption(
-                '決済済み',
-                '架電で決済済み',
-                '架電不要で決済済み',
-                paymentCall,
-                paymentNoCall,
-                months
-            )
-        );
+    chart4.setOption(
+        createOption(
+            '件数',
+            '認証数',
+            recall1,
+            recall2,
+            months
+        )
+    );
 
-        chart4.setOption(
-            createOption(
-                'ReCall',
-                '件数',
-                '認証数',
-                recallCount,
-                recallAuth,
-                months
-            )
-        );
+    /* TOTAL */
 
-        /* TOTAL */
+    document.getElementById('top1').innerHTML =
+    total(call1) +
+    '<span class="total-unit">件</span>';
 
-        document.getElementById(
-            'topTotal1'
-        ).innerText =
-        total(callRequired);
+    document.getElementById('top2').innerHTML =
+    total(call2) +
+    '<span class="total-unit">件</span>';
 
-        document.getElementById(
-            'topTotal2'
-        ).innerText =
-        total(callUnnecessary);
+    document.getElementById('license1').innerHTML =
+    total(auth1) +
+    '<span class="total-unit">件</span>';
 
-        document.getElementById(
-            'licenseTotal1'
-        ).innerText =
-        total(authCall);
+    document.getElementById('license2').innerHTML =
+    total(auth2) +
+    '<span class="total-unit">件</span>';
 
-        document.getElementById(
-            'licenseTotal2'
-        ).innerText =
-        total(authNoCall);
+    document.getElementById('payment1').innerHTML =
+    total(pay1) +
+    '<span class="total-unit">件</span>';
 
-        document.getElementById(
-            'paymentTotal1'
-        ).innerText =
-        total(paymentCall);
+    document.getElementById('payment2').innerHTML =
+    total(pay2) +
+    '<span class="total-unit">件</span>';
 
-        document.getElementById(
-            'paymentTotal2'
-        ).innerText =
-        total(paymentNoCall);
+    document.getElementById('recall1').innerHTML =
+    total(recall1) +
+    '<span class="total-unit">件</span>';
+
+    document.getElementById('recall2').innerHTML =
+    total(recall2) +
+    '<span class="total-unit">件</span>';
+
+    if(data.length){
 
         document.getElementById(
-            'recallTotal1'
-        ).innerText =
-        total(recallCount);
-
-        document.getElementById(
-            'recallTotal2'
-        ).innerText =
-        total(recallAuth);
-
-        /* UPDATE */
-
-        const latest =
-        data[data.length - 1];
-
-        document.getElementById(
-            'lastUpdate'
+            'updateTime'
         ).innerText =
         new Date(
-            latest.updated_at
+            data[data.length-1].updated_at
         ).toLocaleString('ja-JP');
-
-        showStatus(
-            'データ読込成功',
-            'success'
-        );
-
-    }catch(err){
-
-        console.error(err);
-
-        showStatus(
-            err.message,
-            'error'
-        );
-
     }
 }
 
