@@ -159,8 +159,8 @@ margin-top:4px;
 月份
 <input type="month" id="month">
 
-<button onclick="loadByDate()">按日期</button>
-<button onclick="loadByMonth()">按月份</button>
+<button onclick="loadByDate()">日付別</button>
+<button onclick="loadByMonth()">月別</button>
 
 </div>
 
@@ -168,51 +168,51 @@ margin-top:4px;
 <div class="dashboard">
 
 <div class="card">
-<div>来电量</div>
+<div>着電数</div>
 <div class="big" id="inbound">0</div>
 </div>
 
 <div class="card">
-<div>电话完拨量</div>
+<div>電話発信完了数</div>
 <div class="big" id="totalCalls">0</div>
 </div>
 
 <div class="card">
-<div>接通量</div>
+<div>接続数</div>
 <div class="big" id="connected">0</div>
 </div>
 
 <div class="card">
-<div>有效接通量</div>
+<div>有効接続数</div>
 <div class="big" id="answered">0</div>
 </div>
 
 <div class="card">
-<div>接通率</div>
+<div>接続率</div>
 <div class="big" id="rate">0%</div>
 </div>
 
 <div class="card">
-<div>有效接通率</div>
+<div>有効接続率</div>
 <div class="big" id="validRate">0%</div>
 </div>
 
 </div>
 
 
-<div class="sectionTitle">OP统计表</div>
+<div class="sectionTitle">OP別</div>
 
 <table>
 
 <thead>
 <tr>
 <th>OP</th>
-<th>来电量</th>
-<th>电话量</th>
-<th>接通量</th>
-<th>有效接通量</th>
-<th>接通率</th>
-<th>有效接通率</th>
+<th>着電数</th>
+<th>電話発信完了数</th>
+<th>接続数</th>
+<th>有効接続数</th>
+<th>接続率</th>
+<th>有効接続率</th>
 </tr>
 </thead>
 
@@ -224,19 +224,19 @@ margin-top:4px;
 <div class="charts">
 
 <div class="chartCard">
-<div class="sectionTitle">事务业务占比</div>
+<div class="sectionTitle">事務業務割合</div>
 <canvas id="officeChart"></canvas>
 </div>
 
 <div class="chartCard">
-<div class="sectionTitle">电话量趋势</div>
+<div class="sectionTitle">電話量推移</div>
 <canvas id="callChart"></canvas>
 </div>
 
 </div>
 
 
-<div class="sectionTitle">事务作业统计</div>
+<div class="sectionTitle">事務作業統計</div>
 <div class="officeGrid" id="officeStats"></div>
 
 <script>
@@ -284,21 +284,21 @@ return{
 list_kaitsu:{name:"開通リスト更新",val:0},
 mail_list:{name:"メルマガリスト",val:0},
 list_fubi:{name:"不備リスト更新",val:0},
-mail_app:{name:"メルマガアプリ",val:0},
-card:{name:"SF取引先屋号作成",val:0},
-issuer1:{name:"イシュア不備（1次）",val:0},
+mail_app:{name:"メルマガアプリ登録",val:0},
+card:{name:"取引先屋号作成",val:0},
+issuer1:{name:"イシュア不備（一次対応）",val:0},
 promo:{name:"販促物リスト作成",val:0},
-risk_tel:{name:"風控業務（電話）",val:0},
+risk_tel:{name:"リスクコントロール（電話）",val:0},
 sf:{name:"SF売り上げ導入",val:0},
-risk_mail:{name:"風控業務（メール）",val:0},
+risk_mail:{name:"リスクコントロール（メール）",val:0},
 ms:{name:"イシュア不備（M&S）",val:0},
-complain_tel:{name:"投诉业务（电话）",val:0},
+complain_tel:{name:"苦情対応（L2電話）",val:0},
 es:{name:"イシュア不備（ES）",val:0},
-complain_mail:{name:"投诉业务（邮件）",val:0},
+complain_mail:{name:"苦情対応（L2邮件）",val:0},
 olc:{name:"OLC決済突合",val:0},
-haneda_trans:{name:"羽田翻译",val:0},
+haneda_trans:{name:"羽田業務レポート",val:0},
 jb:{name:"ジェイブリッツ案件",val:0},
-haneda_cs:{name:"羽田客服",val:0}
+haneda_cs:{name:"羽田業務CS",val:0}
 }
 }
 
