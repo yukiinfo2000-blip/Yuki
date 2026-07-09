@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>運営部業務ダッシュボード</title>
+  <!-- Chart.js & DataLabels -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ----- フォント & カラー（墨藍色系・高級感） ----- */
+    @import url('https://fonts.googleapis.com/css2?family=HarmonyOS+Sans+SC:wght@400;600;700;800&display=swap');
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'HarmonyOS Sans SC', 'Segoe UI', 'Hiragino Sans', sans-serif;
+    }
+    :root {
+      --bg: #f4f2ed;
+      --card: #ffffff;
+      --border: #dedbd4;
+      --text: #3e3a39;
+      --sub: #8a8580;
+      --shadow: 0 4px 16px rgba(0,0,0,0.03);
+      /* 墨藍色系 (高級感) */
+      --ink-blue-1: #4a5b6e;
+      --ink-blue-2: #5b6f84;
+      --ink-blue-3: #6d7f94;
+      --ink-blue-4: #7e8fa2;
+      --ink-blue-5: #8f9fb0;
+      --ink-blue-6: #a0b0bf;
+      --ink-blue-7: #b0bfcc;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    /* ヘッダー */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .header-left h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #2e2a28;
+    }
+    .header-left p {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 4px;
+    }
+    .filter-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--card);
+      padding: 10px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-group label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #5b5550;
+    }
+    .filter-group select {
+      height: 32px;
+      border: 1px solid #d6d1c9;
+      border-radius: 8px;
+      background: white;
+      padding: 0 10px;
+      font-size: 12px;
+      min-width: 76px;
+      color: #3e3a39;
+    }
+    .hint {
+      font-size: 11px;
+      color: #b0aaa3;
+      margin-left: 2px;
+    }
+    .btn-search {
+      height: 32px;
+      background: #4a5b6e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 20px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn-search:hover { background: #3b4a5a; }
+
+    /* カード */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #3e3a39;
+    }
+    .card-title small {
+      font-weight: 400;
+      font-size: 12px;
+      color: var(--sub);
+    }
+
+    /* グリッド */
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .month-card {
+      background: #fcfbf9;
+      border: 1px solid #e3dfd7;
+      border-radius: 14px;
+      padding: 12px 12px 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      transition: 0.15s;
+    }
+    .month-card.active {
+      border-color: #7e8fa2;
+      box-shadow: 0 4px 14px rgba(74,91,110,0.08);
+    }
+    .month-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .month-card-header h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #3e3a39;
+    }
+    .month-badge {
+      font-size: 10px;
+      background: #6d7f94;
+      color: white;
+      padding: 2px 12px;
+      border-radius: 30px;
+    }
+    .chart-container {
+      height: 170px;
+      position: relative;
+    }
+    .chart-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* テーブル */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 600px;
+    }
+    th {
+      background: #ece8e1;
+      color: #3e3a39;
+      font-weight: 700;
+      padding: 8px 10px;
+      border: 1px solid #dad5cc;
+      text-align: center;
+      white-space: nowrap;
+    }
+    td {
+      padding: 7px 10px;
+      border: 1px solid #dad5cc;
+      text-align: center;
+      background: white;
+    }
+    .op-name {
+      font-weight: 600;
+      background: #f6f3ee;
+      text-align: left;
+      padding-left: 14px;
+      color: #3e3a39;
+    }
+    .num-zero {
+      color: #b5b0a8;
+    }
+
+    /* 折れ線グリッド */
+    .line-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
+      margin-top: 6px;
+    }
+    .line-card {
+      background: #fcfbf9;
+      border: 1px solid #e3dfd7;
+      border-radius: 14px;
+      padding: 10px 10px 4px;
+    }
+    .line-card h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: #3e3a39;
+    }
+    .line-chart-box {
+      height: 160px;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 700px) {
+      .header { flex-direction: column; align-items: stretch; }
+      .filter-area { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ヘッダー + フィルター -->
+  <div class="header">
+    <div class="header-left">
+      <h1>運営部業務ダッシュボード</h1>
+
+    </div>
+    <div class="filter-area">
+      <div class="filter-group">
+        <label>開始月</label>
+        <select id="startMonth"></select>
+      </div>
+      <div class="filter-group">
+        <label>終了月</label>
+        <select id="endMonth"></select>
+      </div>
+      <span class="hint">※ 最大4ヶ月</span>
+      <button class="btn-search" onclick="applyFilter()">照会</button>
+    </div>
+  </div>
+
+  <!-- ① 件数 柱形図（月別） -->
+  <div class="card">
+    <div class="card-title">📋 件数サマリー（月別） <small>各業務の処理件数</small></div>
+    <div class="month-grid" id="barChartGrid"></div>
+  </div>
+
+  <!-- ② 従業員別 件数テーブル -->
+  <div class="card">
+    <div class="card-title">👤 従業員別 件数 <small>（期間合計、0件は「-」）</small></div>
+    <div class="table-wrap" id="employeeTableWrap">
+      <table id="employeeTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ③ 日次時間比率 折れ線（月別） -->
+  <div class="card">
+    <div class="card-title">⏱️ 日次時間比率（実績/1920分） <small>線の横にその日の合計時間(分)を表示</small></div>
+    <div class="line-grid" id="lineChartGrid"></div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // 1. Supabase 設定（お客様の環境に合わせて変更してください）
+  // ============================================================
+  const SUPABASE_URL = 'https://ieijoczgnndiqmowadty.supabase.co';   
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg';                
+
+  const TABLE_NAME = 'op_daily_work';
+
+  // ============================================================
+  // 2. グローバル変数
+  // ============================================================
+  let allData = [];
+  const today = new Date();
+  // デモ用固定日付を使いたい場合:
+  // const today = new Date(2026, 5, 15);
+
+  const WORK_TYPES = [
+    'pms_count','customer_count','invoice_count','promo_count',
+    'discover_count','coupon_count','wsystem_count'
+  ];
+  const TIME_TYPES = [
+    'pms_time','customer_time','invoice_time','promo_time',
+    'discover_time','coupon_time','wsystem_time'
+  ];
+
+  const LABEL_MAP = {
+    pms_count: 'PMSリスト作成',
+    customer_count: 'カスタマーサポート',
+    invoice_count: 'インボイス進捗連携',
+    promo_count: '販促物の発注',
+    discover_count: 'Discover店舗ページ作成',
+    coupon_count: 'クーポン登録',
+    wsystem_count: 'システムAPI更新'
+  };
+
+  // 墨藍色系 (高級感) 7色
+  const INK_BLUE_COLORS = [
+    '#4a5b6e', '#5b6f84', '#6d7f94', '#7e8fa2',
+    '#8f9fb0', '#a0b0bf', '#b0bfcc'
+  ];
+  // 未来月用の色 (少し明るめの墨藍)
+  const FUTURE_COLOR = '#8f9fb0';
+
+  // ============================================================
+  // 3. Supabase からデータ取得
+  // ============================================================
+  async function fetchDataFromSupabase() {
+    try {
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data, error } = await supabase
+        .from(TABLE_NAME)
+        .select('*')
+        .order('work_date', { ascending: true });
+
+      if (error) {
+        console.error('Supabase取得エラー:', error);
+        alert('データ取得に失敗しました。コンソールを確認してください。');
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.error('fetch error:', e);
+      return [];
+    }
+  }
+
+  // ============================================================
+  // 4. フィルター関連
+  // ============================================================
+  function initSelects() {
+    const sm = document.getElementById('startMonth');
+    const em = document.getElementById('endMonth');
+    for (let m = 1; m <= 12; m++) {
+      sm.add(new Option(m + '月', m));
+      em.add(new Option(m + '月', m));
+    }
+    const nowM = today.getMonth() + 1;
+    const start = Math.max(1, nowM - 2);
+    const end = Math.min(12, nowM);
+    sm.value = start;
+    em.value = end;
+  }
+
+  function getFilterParams() {
+    const sm = parseInt(document.getElementById('startMonth').value);
+    const em = parseInt(document.getElementById('endMonth').value);
+    if (em - sm >= 4) {
+      alert('最大4ヶ月まで指定可能です。');
+      return null;
+    }
+    if (sm > em) {
+      alert('開始月は終了月より前にしてください。');
+      return null;
+    }
+    return { startMonth: sm, endMonth: em };
+  }
+
+  function filterDataByMonth(data, sm, em) {
+    return data.filter(row => {
+      if (!row.work_date) return false;
+      const m = new Date(row.work_date).getMonth() + 1;
+      return m >= sm && m <= em;
+    });
+  }
+
+  // ============================================================
+  // 5. 描画関数
+  // ============================================================
+
+  // 5-1. 件数 棒グラフ (月別)
+  function renderBarCharts(filtered, startM, endM) {
+    const grid = document.getElementById('barChartGrid');
+    grid.innerHTML = '';
+
+    for (let m = startM; m <= endM; m++) {
+      const monthRows = filtered.filter(r => new Date(r.work_date).getMonth() + 1 === m);
+      if (monthRows.length === 0) continue;
+
+      const sums = {};
+      WORK_TYPES.forEach(k => sums[k] = 0);
+      monthRows.forEach(row => {
+        WORK_TYPES.forEach(k => sums[k] += (row[k] || 0));
+      });
+
+      const card = document.createElement('div');
+      card.className = 'month-card';
+      if (m === today.getMonth() + 1) card.classList.add('active');
+
+      const labels = WORK_TYPES.map(k => LABEL_MAP[k] || k);
+      const values = WORK_TYPES.map(k => sums[k]);
+      const isFuture = m > today.getMonth() + 1;
+
+      card.innerHTML = `
+        <div class="month-card-header">
+          <h3>${m}月</h3>
+          ${m === today.getMonth()+1 ? '<span class="month-badge">今月</span>' : ''}
+        </div>
+        <div class="chart-container"><canvas id="bar_${m}"></canvas></div>
+      `;
+      grid.appendChild(card);
+
+      const ctx = document.getElementById(`bar_${m}`).getContext('2d');
+      const bgColors = isFuture ? WORK_TYPES.map(() => FUTURE_COLOR) : INK_BLUE_COLORS.slice(0,7);
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '件数',
+            data: values,
+            backgroundColor: bgColors,
+            borderColor: isFuture ? '#7e8fa2' : '#4a5b6e',
+            borderWidth: 1.2,
+            borderRadius: 3,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'end',
+              color: '#4a5b6e',
+              font: { size: 9, weight: '600' },
+              formatter: v => v || ''
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 8 }, color: '#6d6a64' } },
+            y: { beginAtZero: true, grid: { color: '#e8e3db' }, ticks: { font: { size: 8 }, color: '#6d6a64' } }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+  }
+
+  // 5-2. 従業員別 テーブル
+  function renderEmployeeTable(filtered) {
+    const opMap = {};
+    filtered.forEach(row => {
+      const op = row.op_name || '未設定';
+      if (!opMap[op]) {
+        opMap[op] = {};
+        WORK_TYPES.forEach(k => opMap[op][k] = 0);
+      }
+      WORK_TYPES.forEach(k => opMap[op][k] += (row[k] || 0));
+    });
+
+    const thead = document.getElementById('tableHead');
+    const tbody = document.getElementById('tableBody');
+    const labels = ['従業員名', ...WORK_TYPES.map(k => LABEL_MAP[k] || k)];
+    thead.innerHTML = `<tr>${labels.map(l => `<th>${l}</th>`).join('')}</tr>`;
+
+    let html = '';
+    Object.keys(opMap).forEach(op => {
+      const vals = WORK_TYPES.map(k => {
+        const v = opMap[op][k];
+        return v === 0 ? '-' : v;
+      });
+      html += `<tr><td class="op-name">${op}</td>${vals.map(v => `<td>${v}</td>`).join('')}</tr>`;
+    });
+    tbody.innerHTML = html || '<tr><td colspan="8" style="color:#b0aaa3;">データがありません</td></tr>';
+  }
+
+  // 5-3. 日次時間比率 折れ線 (月別)  ★ 墨藍色系 + 小数点修正 ★
+  function renderLineCharts(filtered, startM, endM) {
+    const grid = document.getElementById('lineChartGrid');
+    grid.innerHTML = '';
+    const TOTAL_MIN = 1920;
+
+    for (let m = startM; m <= endM; m++) {
+      const monthRows = filtered.filter(r => new Date(r.work_date).getMonth() + 1 === m);
+      if (monthRows.length === 0) continue;
+
+      const dayMap = {};
+      monthRows.forEach(row => {
+        const d = row.work_date;
+        if (!dayMap[d]) dayMap[d] = { total: 0, opCount: 0 };
+        let sum = 0;
+        TIME_TYPES.forEach(tk => sum += (row[tk] || 0));
+        dayMap[d].total += sum;
+        dayMap[d].opCount += 1;
+      });
+
+      const sortedDays = Object.keys(dayMap).sort();
+      const labels = sortedDays.map(d => new Date(d).getDate() + '日');
+      const ratios = sortedDays.map(d => {
+        const total = dayMap[d].total;
+        const avgTotal = total / dayMap[d].opCount;
+        return Math.min(avgTotal / TOTAL_MIN * 100, 100);
+      });
+      const totalMins = sortedDays.map(d => {
+        const total = dayMap[d].total;
+        return Math.round(total / dayMap[d].opCount);
+      });
+
+      // Y軸調整
+      const validRatios = ratios.filter(v => v !== undefined && !isNaN(v));
+      let minVal = 0;
+      let maxVal = 100;
+      if (validRatios.length > 0) {
+        const minData = Math.min(...validRatios);
+        const maxData = Math.max(...validRatios);
+        if (maxData - minData < 15) {
+          minVal = Math.max(0, minData - 5);
+          maxVal = Math.min(100, maxData + 10);
+        } else {
+          minVal = Math.max(0, minData - 3);
+          maxVal = Math.min(100, maxData + 5);
+        }
+        if (maxVal - minVal < 8) {
+          maxVal = Math.min(100, maxVal + 8);
+        }
+        if (minVal > 3) minVal = 0;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'line-card';
+      const isFuture = m > today.getMonth() + 1;
+      card.innerHTML = `
+        <h4>${m}月 ${isFuture ? '🔮' : ''}</h4>
+        <div class="line-chart-box"><canvas id="line_${m}"></canvas></div>
+      `;
+      grid.appendChild(card);
+
+      const ctx = document.getElementById(`line_${m}`).getContext('2d');
+      // 墨藍色系のライン (高級感)
+      const lineColor = isFuture ? '#8f9fb0' : '#4a5b6e';
+      const fillColor = isFuture ? 'rgba(143,159,176,0.15)' : 'rgba(74,91,110,0.12)';
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '時間比率 (%)',
+            data: ratios,
+            borderColor: lineColor,
+            backgroundColor: fillColor,
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2.5,
+            pointRadius: 3,
+            pointBackgroundColor: lineColor,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              align: 'top',
+              anchor: 'end',
+              color: '#4a5b6e',
+              font: { size: 8, weight: '600' },
+              formatter: (v, ctx) => {
+                const idx = ctx.dataIndex;
+                const total = totalMins[idx] || 0;
+                // ★ パーセント表示を整数に修正（小数点以下を切り捨て／四捨五入）
+                const percentDisplay = Math.round(v);
+                return `${percentDisplay}%\n${total}分`;
+              },
+              offset: 2,
+              textAlign: 'center'
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 8 }, color: '#6d6a64' } },
+            y: {
+              min: minVal,
+              max: maxVal,
+              grid: { color: '#e8e3db' },
+              ticks: {
+                font: { size: 8 },
+                color: '#6d6a64',
+                callback: v => Math.round(v) + '%',
+                stepSize: Math.max(2, Math.round((maxVal - minVal) / 6))
+              }
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+  }
+
+  // ============================================================
+  // 6. メイン処理
+  // ============================================================
+  async function applyFilter() {
+    const params = getFilterParams();
+    if (!params) return;
+    const { startMonth, endMonth } = params;
+
+    if (allData.length === 0) {
+      allData = await fetchDataFromSupabase();
+      if (allData.length === 0) {
+        alert('データが取得できませんでした。Supabase設定を確認してください。');
+        return;
+      }
+    }
+
+    const filtered = filterDataByMonth(allData, startMonth, endMonth);
+    renderBarCharts(filtered, startMonth, endMonth);
+    renderEmployeeTable(filtered);
+    renderLineCharts(filtered, startMonth, endMonth);
+  }
+
+  // ============================================================
+  // 7. 初期化
+  // ============================================================
+  async function init() {
+    initSelects();
+
+    allData = await fetchDataFromSupabase();
+    if (allData.length === 0) {
+      console.warn('Supabaseからデータ取得できなかったため、サンプルデータを生成します。');
+      allData = generateDemoData();
+    }
+
+    const sm = parseInt(document.getElementById('startMonth').value);
+    const em = parseInt(document.getElementById('endMonth').value);
+    const filtered = filterDataByMonth(allData, sm, em);
+    renderBarCharts(filtered, sm, em);
+    renderEmployeeTable(filtered);
+    renderLineCharts(filtered, sm, em);
+  }
+
+  // ============================================================
+  // 8. デモデータ生成（Supabase未接続時用）
+  // ============================================================
+  function generateDemoData() {
+    const data = [];
+    const ops = ['佐藤 一郎','鈴木 花子','高橋 健太','田中 美咲','伊藤 誠'];
+    const start = new Date(2026, 3, 1);
+    const end = new Date(2026, 5, 30);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().slice(0,10);
+      ops.forEach(op => {
+        const row = { work_date: dateStr, op_name: op, note: '' };
+        WORK_TYPES.forEach((key, idx) => {
+          const val = Math.floor(Math.random() * 8) + 2;
+          row[key] = val;
+          const timeKey = TIME_TYPES[idx];
+          row[timeKey] = val * (5 + Math.floor(Math.random() * 15)) + Math.floor(Math.random() * 6);
+        });
+        data.push(row);
+      });
+    }
+    return data;
+  }
+
+  init();
+</script>
+
+</body>
+</html>

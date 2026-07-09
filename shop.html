@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>FY26 施策ダッシュボード</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f0f2f5;
+      font-family: "Segoe UI", "Hiragino Sans", sans-serif;
+      padding: 24px;
+      color: #1e293b;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f3b5e;
+    }
+    .header h1 small {
+      font-weight: 400;
+      font-size: 14px;
+      color: #64748b;
+      margin-left: 8px;
+    }
+    .status-area {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .status-area .error { color: #dc2626; }
+    .status-area .success { color: #16a34a; }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    /* 指標カード */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-item {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 16px 20px;
+      border-left: 4px solid #2d7fc1;
+    }
+    .metric-item .label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .metric-item .value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f3b5e;
+      margin-top: 2px;
+    }
+    .metric-item .unit {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-left: 4px;
+    }
+    .metric-item:nth-child(1) { border-left-color: #2d7fc1; }
+    .metric-item:nth-child(2) { border-left-color: #6d8a9e; }
+    .metric-item:nth-child(3) { border-left-color: #e67e22; }
+    .metric-item:nth-child(4) { border-left-color: #27ae60; }
+
+    /* グラフ */
+    .chart-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f3b5e;
+      margin-bottom: 12px;
+    }
+    .chart-title small {
+      font-weight: 400;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-left: 6px;
+    }
+    .chart-box {
+      height: 260px;
+      position: relative;
+    }
+    .chart-box canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* 餅図 */
+    .pie-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .pie-item {
+      background: #fafcff;
+      border: 1px solid #e8edf5;
+      border-radius: 14px;
+      padding: 20px 16px 10px;
+      position: relative;
+    }
+    .pie-item h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f3b5e;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .pie-box {
+      height: 240px;
+      position: relative;
+    }
+    .pie-box canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    /* 中央のテキスト（加盟店数） */
+    .pie-center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .pie-center-text .number {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f3b5e;
+      line-height: 1.2;
+    }
+    .pie-center-text .label {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .data-info {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #4338ca;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .metric-grid { grid-template-columns: repeat(2, 1fr); }
+      .pie-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .metric-grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ヘッダー -->
+  <div class="header">
+    <h1>FY26 施策ダッシュボード</h1>
+    <div class="status-area" id="statusArea"></div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- FY26 横浜市商店街施策 -->
+  <!-- ========================================================== -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="font-size:18px;font-weight:700;color:#0f3b5e;">FY26 横浜市商店街施策</h2>
+      <span style="font-size:12px;color:#94a3b8;">Operation Performance</span>
+    </div>
+    <div class="metric-grid" id="yMetricGrid"></div>
+    <div class="chart-title">Monthly Volume <small>3月 - 12月</small></div>
+    <div class="chart-box">
+      <canvas id="yTrendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- FY26 横浜中華街施策 -->
+  <!-- ========================================================== -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="font-size:18px;font-weight:700;color:#0f3b5e;">FY26 横浜中華街施策</h2>
+      <span style="font-size:12px;color:#94a3b8;">Operation Performance</span>
+    </div>
+    <div class="metric-grid" id="sMetricGrid"></div>
+    <div class="chart-title">Monthly Volume <small>3月 - 12月</small></div>
+    <div class="chart-box">
+      <canvas id="sTrendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- 業績統計 -->
+  <!-- ========================================================== -->
+  <div class="card">
+    <h2 style="font-size:18px;font-weight:700;color:#0f3b5e;margin-bottom:16px;">📈 業績統計 <small style="font-weight:400;font-size:13px;color:#64748b;margin-left:8px;">加盟店・活性・売上</small></h2>
+    <div class="pie-grid">
+      <div class="pie-item">
+        <h3>FY26 横浜市商店街施策</h3>
+        <div class="pie-box" style="position:relative;">
+          <canvas id="pieYokohama"></canvas>
+          <div class="pie-center-text" id="pieYokohamaCenter">
+            <div class="number" id="pieYokohamaNum">0</div>
+            <div class="label">加盟店数</div>
+          </div>
+        </div>
+      </div>
+      <div class="pie-item">
+        <h3>FY26 横浜中華街施策</h3>
+        <div class="pie-box" style="position:relative;">
+          <canvas id="pieChinatown"></canvas>
+          <div class="pie-center-text" id="pieChinatownCenter">
+            <div class="number" id="pieChinatownNum">0</div>
+            <div class="label">加盟店数</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // ★★★ Supabase 設定 ★★★
+  // ============================================================
+  const SUPABASE_URL = "https://ieijoczgnndiqmowadty.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg";
+  const TABLE = "temporary_work";
+
+  // ============================================================
+  // グローバル
+  // ============================================================
+  let allData = [];
+  const MONTHS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const MONTH_LABELS = ['3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+  // ============================================================
+  // ステータス表示
+  // ============================================================
+  function setStatus(message, isError = false) {
+    const area = document.getElementById('statusArea');
+    if (isError) {
+      area.innerHTML = `<span class="error">❌ ${message}</span>`;
+    } else if (message) {
+      area.innerHTML = `<span class="success">✅ ${message}</span>`;
+    } else {
+      area.innerHTML = '';
+    }
+  }
+
+  // ============================================================
+  // データ取得
+  // ============================================================
+  async function fetchData() {
+    try {
+      if (!SUPABASE_URL || SUPABASE_URL === 'https://your-project.supabase.co') {
+        setStatus('Supabase URLが設定されていません', true);
+        return null;
+      }
+      if (!SUPABASE_KEY || SUPABASE_KEY === 'your-anon-key') {
+        setStatus('Supabase anonキーが設定されていません', true);
+        return null;
+      }
+
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const { data, error } = await supabaseClient
+        .from(TABLE)
+        .select('*')
+        .order('work_date', { ascending: true });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        setStatus(`データ取得エラー: ${error.message}`, true);
+        return null;
+      }
+
+      if (!data || data.length === 0) {
+        setStatus('テーブルにデータがありません。サンプルデータを生成します。');
+        return 'empty';
+      }
+
+      setStatus(`データ取得成功: ${data.length} 件`);
+      return data;
+    } catch (e) {
+      console.error('Fetch error:', e);
+      setStatus(`通信エラー: ${e.message}`, true);
+      return null;
+    }
+  }
+
+  // ============================================================
+  // 月別集計 (3月〜12月)
+  // ============================================================
+  function aggregateByMonth(data, prefix) {
+    const map = {};
+    MONTHS.forEach(m => map[m] = { excel: 0, form: 0, call: 0, valid: 0 });
+
+    if (!data || data.length === 0) return map;
+
+    data.forEach(row => {
+      if (!row.work_date) return;
+      const m = new Date(row.work_date).getMonth() + 1;
+      if (m < 3 || m > 12) return;
+      if (!map[m]) map[m] = { excel: 0, form: 0, call: 0, valid: 0 };
+      map[m].excel += (row[prefix + '_excel'] || 0);
+      map[m].form += (row[prefix + '_form'] || 0);
+      map[m].call += (row[prefix + '_call'] || 0);
+      map[m].valid += (row[prefix + '_valid'] || 0);
+    });
+
+    return map;
+  }
+
+  // ============================================================
+  // 指標カード描画
+  // ============================================================
+  function renderMetrics(containerId, dataMap) {
+    const container = document.getElementById(containerId);
+    const totals = { excel: 0, form: 0, call: 0, valid: 0 };
+
+    Object.values(dataMap).forEach(d => {
+      totals.excel += d.excel;
+      totals.form += d.form;
+      totals.call += d.call;
+      totals.valid += d.valid;
+    });
+
+    container.innerHTML = `
+      <div class="metric-item">
+        <div class="label">Excel入力</div>
+        <div class="value">${totals.excel.toLocaleString()} <span class="unit">件</span></div>
+      </div>
+      <div class="metric-item">
+        <div class="label">Foam入力</div>
+        <div class="value">${totals.form.toLocaleString()} <span class="unit">件</span></div>
+      </div>
+      <div class="metric-item">
+        <div class="label">架電数</div>
+        <div class="value">${totals.call.toLocaleString()} <span class="unit">件</span></div>
+      </div>
+      <div class="metric-item">
+        <div class="label">有効架電数</div>
+        <div class="value">${totals.valid.toLocaleString()} <span class="unit">件</span></div>
+      </div>
+    `;
+  }
+
+  // ============================================================
+  // トレンドグラフ描画（棒グラフ）
+  // ============================================================
+  function renderTrend(canvasId, dataMap) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const existing = Chart.getChart(canvasId);
+    if (existing) existing.destroy();
+
+    const excelData = MONTHS.map(m => dataMap[m]?.excel || 0);
+    const formData = MONTHS.map(m => dataMap[m]?.form || 0);
+    const callData = MONTHS.map(m => dataMap[m]?.call || 0);
+
+    const colors = {
+      excel: { bg: '#2d7fc1', border: '#1a5a8a' },
+      form: { bg: '#6d8a9e', border: '#4a6a7e' },
+      call: { bg: '#e67e22', border: '#b85e1a' },
+    };
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: MONTH_LABELS,
+        datasets: [
+          {
+            label: 'Excel入力',
+            data: excelData,
+            backgroundColor: colors.excel.bg,
+            borderColor: colors.excel.border,
+            borderWidth: 1,
+            borderRadius: 3,
+            borderSkipped: false,
+          },
+          {
+            label: 'Foam入力',
+            data: formData,
+            backgroundColor: colors.form.bg,
+            borderColor: colors.form.border,
+            borderWidth: 1,
+            borderRadius: 3,
+            borderSkipped: false,
+          },
+          {
+            label: '架電数',
+            data: callData,
+            backgroundColor: colors.call.bg,
+            borderColor: colors.call.border,
+            borderWidth: 1,
+            borderRadius: 3,
+            borderSkipped: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'start',
+            labels: {
+              font: { size: 11, weight: '600' },
+              boxWidth: 14,
+              padding: 16,
+              usePointStyle: true,
+              pointStyle: 'circle',
+            }
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'end',
+            color: '#1e293b',
+            font: { size: 9, weight: '700' },
+            formatter: v => v || '',
+            offset: 2,
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 10, weight: '500' }, color: '#475569' }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#eef2f6' },
+            ticks: { font: { size: 10 }, color: '#64748b' }
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+  }
+
+  // ============================================================
+  // 餅図描画（活性／未活性のみ、中央に加盟店数）
+  // ============================================================
+  function renderPie(canvasId, centerNumId, actual, active, revenue) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const inactive = Math.max(0, actual - active);
+
+    // 中央のテキスト更新
+    const centerNum = document.getElementById(centerNumId);
+    if (centerNum) {
+      centerNum.textContent = actual.toLocaleString();
+    }
+
+    const existing = Chart.getChart(canvasId);
+    if (existing) existing.destroy();
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['活性加盟店', '未活性'],
+        datasets: [{
+          data: [active, inactive],
+          backgroundColor: ['#e67e22', '#d1d9e6'],
+          borderColor: '#fff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 11, weight: '600' },
+              boxWidth: 14,
+              padding: 16,
+              usePointStyle: true,
+              pointStyle: 'circle',
+            }
+          },
+          datalabels: {
+            color: '#1e293b',
+            font: { size: 12, weight: '700' },
+            formatter: (v, ctx) => {
+              const label = ctx.chart.data.labels[ctx.dataIndex];
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = total > 0 ? Math.round((v / total) * 100) : 0;
+              // 活性の場合は売上表示、未活性はそのまま
+              if (label === '活性加盟店' && revenue > 0) {
+                return `${v}\n${percentage}%\n売上 ${revenue.toLocaleString()}`;
+              }
+              return `${v}\n${percentage}%`;
+            },
+            anchor: 'end',
+            align: 'end',
+            offset: 4,
+            textAlign: 'center',
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+  }
+
+  // ============================================================
+  // デモデータ生成
+  // ============================================================
+  function generateDemoData() {
+    const data = [];
+    const ops = ['刘皓', '丛真', '王艳', '孙雪薇', '劉偉'];
+    for (let m = 3; m <= 12; m++) {
+      const days = m === 2 ? 28 : (m % 2 === 0 ? 30 : 31);
+      const dayCount = Math.min(days, 4);
+      for (let d = 1; d <= dayCount; d++) {
+        const dateStr = `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        ops.forEach(op => {
+          const row = {
+            work_date: dateStr,
+            op_name: op,
+            y_excel: Math.floor(Math.random() * 25) + 3,
+            y_form: Math.floor(Math.random() * 12) + 1,
+            y_call: Math.floor(Math.random() * 20) + 2,
+            y_valid: Math.floor(Math.random() * 10) + 1,
+            y_actual: Math.floor(Math.random() * 12) + 2,
+            y_active: Math.floor(Math.random() * 6) + 1,
+            y_revenue: Math.floor(Math.random() * 50000) + 5000,
+            s_excel: Math.floor(Math.random() * 18) + 2,
+            s_form: Math.floor(Math.random() * 8) + 1,
+            s_call: Math.floor(Math.random() * 12) + 1,
+            s_valid: Math.floor(Math.random() * 6) + 1,
+            s_actual: Math.floor(Math.random() * 10) + 2,
+            s_active: Math.floor(Math.random() * 5) + 1,
+            s_revenue: Math.floor(Math.random() * 40000) + 3000,
+            note: ''
+          };
+          data.push(row);
+        });
+      }
+    }
+    return data;
+  }
+
+  // ============================================================
+  // メイン描画
+  // ============================================================
+  async function renderDashboard() {
+    const result = await fetchData();
+
+    if (result === null) {
+      allData = generateDemoData();
+      setStatus('サンプルデータを表示中（Supabase接続エラー）');
+    } else if (result === 'empty' || result.length === 0) {
+      allData = generateDemoData();
+      setStatus('サンプルデータを表示中');
+    } else {
+      allData = result;
+    }
+
+    // ---- 横浜市商店街施策 ----
+    const yMap = aggregateByMonth(allData, 'y');
+    renderMetrics('yMetricGrid', yMap);
+    renderTrend('yTrendChart', yMap);
+
+    // ---- 横浜中華街施策 ----
+    const sMap = aggregateByMonth(allData, 's');
+    renderMetrics('sMetricGrid', sMap);
+    renderTrend('sTrendChart', sMap);
+
+    // ---- 業績統計 ----
+    let yActual = 0, yActive = 0, yRevenue = 0;
+    let sActual = 0, sActive = 0, sRevenue = 0;
+    allData.forEach(row => {
+      yActual += (row.y_actual || 0);
+      yActive += (row.y_active || 0);
+      yRevenue += (row.y_revenue || 0);
+      sActual += (row.s_actual || 0);
+      sActive += (row.s_active || 0);
+      sRevenue += (row.s_revenue || 0);
+    });
+
+    renderPie('pieYokohama', 'pieYokohamaNum', yActual, yActive, yRevenue);
+    renderPie('pieChinatown', 'pieChinatownNum', sActual, sActive, sRevenue);
+  }
+
+  renderDashboard();
+</script>
+
+</body>
+</html>
