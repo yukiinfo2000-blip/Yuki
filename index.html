@@ -27,6 +27,13 @@ body{
     width:220px;
     background:#e5e5e5;
     padding:20px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.menu{
+    flex:1;
 }
 
 .menu div{
@@ -35,10 +42,42 @@ body{
     cursor:pointer;
     border-radius:6px;
     font-size:16px;
+    transition: 0.15s;
 }
 
 .menu div:hover{
     background:#d0d0d0;
+}
+
+.menu .active{
+    background:#c5b8d9;
+    font-weight:600;
+}
+
+/* 区切り線 */
+.menu .divider{
+    height:1px;
+    background:#ccc;
+    margin:12px 0;
+    cursor:default;
+    pointer-events:none;
+}
+.menu .divider:hover{
+    background:#ccc;
+}
+
+/* セクションラベル */
+.menu .section-label{
+    font-size:12px;
+    font-weight:700;
+    color:#888;
+    padding:4px 8px 8px 8px;
+    letter-spacing:0.5px;
+    cursor:default;
+    pointer-events:none;
+}
+.menu .section-label:hover{
+    background:transparent;
 }
 
 /* 右侧 */
@@ -54,7 +93,6 @@ iframe{
     border:none;
 }
 </style>
-
 </head>
 
 <body>
@@ -66,10 +104,19 @@ iframe{
 <!-- 左菜单 -->
 <div class="sidebar">
     <div class="menu">
-        <div onclick="loadPage('crm.html')">CRM Dashboard</div>
-        <div onclick="loadPage('Per.html')">Performance</div>
-        <div onclick="loadPage('util.html')">Utilization Rate</div>
-        <div onclick="loadPage('profit.html')">Profit</div>
+        <!-- 既存メニュー（日本語化） -->
+        <div onclick="loadPage('crm.html')">📈 ダッシュボード</div>
+        <div onclick="loadPage('Per.html')">📊 パフォーマンス</div>
+        <div onclick="loadPage('util.html')">📉 稼働率</div>
+        <div onclick="loadPage('profit.html')">💰 FI関連</div>
+
+        <!-- 区切り線 -->
+        <div class="divider"></div>
+
+        <!-- 追加メニュー -->
+        <div class="section-label">📌 施策・運営</div>
+        <div onclick="loadPage('shop.html')">🏪 商店街施策</div>
+        <div onclick="loadPage('operation.html')">⚙️ 運営部作業</div>
     </div>
 </div>
 
@@ -83,7 +130,28 @@ iframe{
 <script>
 function loadPage(page){
     document.getElementById("frame").src = page;
+
+    // アクティブ切り替え
+    const items = document.querySelectorAll('.menu div');
+    items.forEach(el => {
+        el.classList.remove('active');
+    });
 }
+
+// クリックイベントでactiveを正しく付与
+document.querySelector('.menu').addEventListener('click', function(e) {
+    const div = e.target.closest('div');
+    if (!div) return;
+    if (div.classList.contains('divider') || div.classList.contains('section-label')) return;
+    this.querySelectorAll('div').forEach(el => el.classList.remove('active'));
+    div.classList.add('active');
+});
+
+// 初期表示時に最初の項目をactiveに
+document.addEventListener('DOMContentLoaded', function() {
+    const first = document.querySelector('.menu div:not(.divider):not(.section-label)');
+    if (first) first.classList.add('active');
+});
 </script>
 
 </body>
