@@ -5,9 +5,12 @@
 <title>BI系统入口</title>
 
 <style>
+/* ★ HarmonyOS Sans SC フォントをインポート */
+@import url('https://fonts.googleapis.com/css2?family=HarmonyOS+Sans+SC:wght@400;500;700&display=swap');
+
 body{
     margin:0;
-    font-family:"Segoe UI","Microsoft YaHei";
+    font-family: "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
 }
 
 /* 顶部 */
@@ -36,6 +39,7 @@ body{
     flex:1;
 }
 
+/* ★ すべてのメニュー項目に HarmonyOS Sans SC Medium (font-weight:500) を適用 */
 .menu div{
     padding:12px;
     margin-bottom:10px;
@@ -43,6 +47,8 @@ body{
     border-radius:6px;
     font-size:16px;
     transition: 0.15s;
+    font-family: "HarmonyOS Sans SC", sans-serif;
+    font-weight: 500; /* Medium */
 }
 
 .menu div:hover{
@@ -51,7 +57,7 @@ body{
 
 .menu .active{
     background:#c5b8d9;
-    font-weight:600;
+    font-weight: 500; /* Medium を維持 */
 }
 
 /* 区切り線 */
@@ -66,15 +72,16 @@ body{
     background:#ccc;
 }
 
-/* セクションラベル */
+/* ★ セクションラベルも HarmonyOS Sans SC Medium */
 .menu .section-label{
     font-size:12px;
-    font-weight:700;
+    font-weight: 500; /* Medium */
     color:#888;
     padding:4px 8px 8px 8px;
     letter-spacing:0.5px;
     cursor:default;
     pointer-events:none;
+    font-family: "HarmonyOS Sans SC", sans-serif;
 }
 .menu .section-label:hover{
     background:transparent;
@@ -104,7 +111,7 @@ iframe{
 <!-- 左菜单 -->
 <div class="sidebar">
     <div class="menu">
-        <!-- 既存メニュー（日本語化） -->
+        <!-- 既存メニュー -->
         <div onclick="loadPage('crm.html')">📈 ダッシュボード</div>
         <div onclick="loadPage('Per.html')">📊 パフォーマンス</div>
         <div onclick="loadPage('util.html')">📉 稼働率</div>
