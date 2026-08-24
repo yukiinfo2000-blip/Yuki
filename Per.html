@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>2026_決済率</title>
+    <title>FY26_アクティブ率</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             background:#f5f7fb;
-            font-family: "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
+            font-family: "HarmonyOS Sans SC", "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
             color:#18253d;
             padding:14px;
         }
@@ -30,7 +30,7 @@
         .header {
             display:flex;
             justify-content:space-between;
-            align-items:flex-start;
+            align-items:center;
             margin-bottom:14px;
             gap:12px;
             flex-wrap:wrap;
@@ -39,11 +39,10 @@
             font-size:28px;
             font-weight:800;
             line-height:1;
+            font-family: inherit;
         }
         .header-left p {
-            margin-top:4px;
-            color:var(--sub);
-            font-size:11px;
+            display: none;  /* サブテキストを非表示 */
         }
         .header-right {
             display:flex;
@@ -61,15 +60,8 @@
         }
         .header-label { font-size:10px; color:var(--sub); margin-bottom:3px; }
         .header-value { font-size:13px; font-weight:700; }
-        .month-input {
-            height:40px;
-            border:1px solid var(--border);
-            border-radius:10px;
-            background:#fff;
-            padding:0 14px;
-            font-size:13px;
-            color:#111827;
-        }
+        /* 対象月の指定は削除 (input非表示) */
+        .month-input { display: none; }
         .reload-btn {
             height:40px;
             padding:0 18px;
@@ -81,6 +73,7 @@
             font-weight:700;
             cursor:pointer;
             transition:0.2s;
+            font-family: inherit;
         }
         .reload-btn:hover { opacity:0.92; }
         .dashboard {
@@ -100,6 +93,7 @@
             font-size:15px;
             font-weight:800;
             margin-bottom:8px;
+            font-family: inherit;
         }
         .chart {
             width:100%;
@@ -135,7 +129,7 @@
         .total-value.blue { color:var(--blue-dark); }
         .total-value.green { color:var(--green-dark); }
         .total-value .total-unit { font-size:11px; margin-left:3px; color:#6b7280; }
-        /* ---- シルバーバッジ (決済率) ---- */
+        /* ---- シルバーバッジ (アクティブ率) ---- */
         .rate-badge {
             display:inline-flex;
             align-items:center;
@@ -193,7 +187,7 @@
         @media(max-width:1100px){
             .dashboard { grid-template-columns:1fr; }
             .recall-wrap { grid-template-columns:1fr; }
-            .header { flex-direction:column; }
+            .header { flex-direction:column; align-items:stretch; }
         }
     </style>
 </head>
@@ -201,14 +195,11 @@
 
 <div class="header">
     <div class="header-left">
-        <h1>2026_決済率</h1>
-        <p>Monthly Performance Overview · 決済率 (西瓜赤点線)</p>
+        <h1>FY26_アクティブ率</h1>
+        <!-- サブテキスト非表示 -->
     </div>
     <div class="header-right">
-        <div class="header-card">
-            <div class="header-label">対象月の指定</div>
-            <input type="month" id="monthPicker" class="month-input">
-        </div>
+        <!-- 対象月の指定を削除 (input非表示) -->
         <button class="reload-btn" onclick="loadDashboard()">↻ データ読込</button>
         <div class="header-card">
             <div class="header-label">データ更新日時</div>
@@ -219,18 +210,18 @@
 
 <div class="dashboard">
 
-    <!-- カード1: 開通通知送信案件 (決済率ライン) + 総決済率をシルバーバッジで表示 -->
+    <!-- カード1: 開通通知送信案件 (アクティブ率ライン) + 総アクティブ率をシルバーバッジで表示 -->
     <div class="card full">
-        <div class="card-title">開通通知送信案件 · 決済率 (西瓜赤点線)</div>
+        <div class="card-title">開通通知送信案件 · アクティブ率</div>
         <div id="chart1" class="chart"></div>
         <div class="total-grid">
             <div class="total-box">
                 <div class="total-label">架電必要 総数</div>
                 <div class="total-value green" id="top1">
                     <span id="top1Count">0</span><span class="total-unit">件</span>
-                    <!-- シルバーバッジ: 決済率 -->
+                    <!-- シルバーバッジ: アクティブ率 -->
                     <span class="rate-badge" id="totalRateOnTop">
-                        <span class="rate-label">決済率</span>
+                        <span class="rate-label">アクティブ率</span>
                         <span class="rate-value" id="rateValue">---</span>
                     </span>
                 </div>
@@ -338,7 +329,7 @@
 
     function total(arr) { return arr.reduce((a,b)=>a+b, 0); }
 
-    // ----- メイン: 赤線 = 決済率 (payment_by_call / call_required * 100) / 総数推移の赤線を削除 / 西瓜赤 #f07070
+    // ----- メイン: 赤線 = アクティブ率 (payment_by_call / call_required * 100) / 西瓜赤 #f07070
     function createOptionWithRate(legend1, legend2, data1, data2, months, payData, callReqData) {
         const rateData = months.map((_, i) => {
             const req = callReqData[i] || 0;
@@ -353,7 +344,7 @@
                 formatter: function(params) {
                     let s = `<b>${params[0].axisValue}</b><br/>`;
                     params.forEach(p => {
-                        if (p.seriesName === '決済率') {
+                        if (p.seriesName === 'アクティブ率') {
                             s += `${p.marker} ${p.seriesName} : ${p.value}%<br/>`;
                         } else {
                             s += `${p.marker} ${p.seriesName} : ${p.value}件<br/>`;
@@ -366,14 +357,14 @@
                 top: 0,
                 itemWidth: 14,
                 itemHeight: 8,
-                textStyle: { fontSize: 10, color: '#6b7280' },
-                data: [legend1, legend2, '決済率']
+                textStyle: { fontSize: 10, color: '#6b7280', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                data: [legend1, legend2, 'アクティブ率']
             },
             grid: { left: 28, right: 12, top: 30, bottom: 22 },
             xAxis: {
                 type: 'category',
                 data: months,
-                axisLabel: { fontSize: 9, color: '#667085' },
+                axisLabel: { fontSize: 9, color: '#667085', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                 axisLine: { lineStyle: { color: '#c7d2e5' } },
                 axisTick: { show: false }
             },
@@ -382,7 +373,7 @@
                     type: 'value',
                     max: 60,
                     interval: 10,
-                    axisLabel: { fontSize: 9, color: '#94a3b8' },
+                    axisLabel: { fontSize: 9, color: '#94a3b8', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     splitLine: { lineStyle: { color: '#eef2f7' } }
                 },
                 {
@@ -390,7 +381,7 @@
                     min: 0,
                     max: 100,
                     interval: 20,
-                    axisLabel: { fontSize: 9, color: '#94a3b8', formatter: '{value}%' },
+                    axisLabel: { fontSize: 9, color: '#94a3b8', formatter: '{value}%', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     splitLine: { show: false }
                 }
             ],
@@ -400,7 +391,7 @@
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700 },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     itemStyle: { color: '#5c93ff', borderRadius: [0,0,2,2] },
                     data: data2
                 },
@@ -409,12 +400,12 @@
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700 },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     itemStyle: { color: '#62c26f', borderRadius: [2,2,0,0] },
                     data: data1
                 },
                 {
-                    name: '決済率',
+                    name: 'アクティブ率',
                     type: 'line',
                     smooth: true,
                     yAxisIndex: 1,
@@ -422,14 +413,14 @@
                     symbolSize: 8,
                     lineStyle: { width: 2.5, type: 'dashed', color: '#f07070' },
                     itemStyle: { color: '#f07070' },
-                    label: { show: true, formatter: '{c}%', fontSize: 9, color: '#b91c1c', fontWeight: 600 },
+                    label: { show: true, formatter: '{c}%', fontSize: 9, color: '#b91c1c', fontWeight: 600, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     data: rateData
                 }
             ]
         };
     }
 
-    // 他チャート用 (従来のbar + 総数推移の赤線を維持)
+    // 他チャート用 (従来のbar + 総数推移の赤線)
     function createOption(legend1, legend2, data1, data2, months) {
         const totalLine = data1.map((v,i) => v + data2[i]);
         return {
@@ -439,14 +430,14 @@
                 top: 0,
                 itemWidth: 14,
                 itemHeight: 8,
-                textStyle: { fontSize: 10, color: '#6b7280' },
+                textStyle: { fontSize: 10, color: '#6b7280', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                 data: [legend1, legend2, '総数推移']
             },
             grid: { left: 28, right: 12, top: 30, bottom: 22 },
             xAxis: {
                 type: 'category',
                 data: months,
-                axisLabel: { fontSize: 9, color: '#667085' },
+                axisLabel: { fontSize: 9, color: '#667085', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                 axisLine: { lineStyle: { color: '#c7d2e5' } },
                 axisTick: { show: false }
             },
@@ -454,7 +445,7 @@
                 type: 'value',
                 max: 60,
                 interval: 10,
-                axisLabel: { fontSize: 9, color: '#94a3b8' },
+                axisLabel: { fontSize: 9, color: '#94a3b8', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                 splitLine: { lineStyle: { color: '#eef2f7' } }
             },
             series: [
@@ -463,7 +454,7 @@
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700 },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     itemStyle: { color: '#5c93ff', borderRadius: [0,0,2,2] },
                     data: data2
                 },
@@ -472,7 +463,7 @@
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700 },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     itemStyle: { color: '#62c26f', borderRadius: [2,2,0,0] },
                     data: data1
                 },
@@ -548,7 +539,7 @@
         document.getElementById('recall1Count').textContent = totalRecall1;
         document.getElementById('recall2Count').textContent = totalRecall2;
 
-        // ---- 総決済率 (架電で決済済み / 架電必要 * 100) をシルバーバッジに表示 ----
+        // ---- 総アクティブ率 (架電で決済済み / 架電必要 * 100) をシルバーバッジに表示 ----
         const rate = totalCall1 === 0 ? 0 : (totalPay1 / totalCall1 * 100);
         const rateDisplay = rate.toFixed(1) + '%';
         document.getElementById('rateValue').textContent = rateDisplay;
