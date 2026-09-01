@@ -385,6 +385,167 @@
             font-size: .85rem;
         }
 
+        /* ===== 新免税流程图 ===== */
+        .tax-free-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            justify-content: center;
+            gap: 1.2rem 0.8rem;
+            padding: 0.6rem 0.2rem;
+        }
+
+        .flow-step {
+            flex: 1 1 180px;
+            min-width: 140px;
+            max-width: 260px;
+            background: #f8faff;
+            border-radius: 1.2rem;
+            border: 1px solid #e2e9f2;
+            padding: 1rem 0.8rem 0.9rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,20,30,0.02);
+            transition: 0.15s;
+            display: flex;
+            flex-direction: column;
+        }
+        .flow-step:hover {
+            border-color: #b8ccdd;
+            background: #fafdff;
+        }
+        .flow-step .step-num {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #5a7d9b;
+            background: #e5edf6;
+            display: inline-block;
+            padding: 0.1rem 0.7rem;
+            border-radius: 40px;
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.05em;
+        }
+        .flow-step .step-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1e3347;
+            margin: 0.2rem 0 0.3rem;
+        }
+        .flow-step .step-desc {
+            font-size: 0.8rem;
+            color: #3d5a73;
+            line-height: 1.5;
+            margin: 0.1rem 0;
+        }
+        .flow-step .step-desc small {
+            color: #6a7f98;
+            font-size: 0.7rem;
+            display: block;
+            margin-top: 0.1rem;
+        }
+        .flow-step .sub-badge {
+            background: #eef3f8;
+            border-radius: 30px;
+            padding: 0.1rem 0.6rem;
+            font-size: 0.65rem;
+            color: #3a5a7a;
+            display: inline-block;
+            margin-top: 0.2rem;
+        }
+        .flow-arrow {
+            font-size: 1.6rem;
+            color: #9bb0c7;
+            align-self: center;
+            font-weight: 200;
+            padding: 0 0.1rem;
+        }
+        .flow-kiosk {
+            background: #f2f6fc;
+            border-radius: 0.8rem;
+            padding: 0.5rem 0.3rem;
+            margin-top: 0.2rem;
+            border: 1px dashed #b8ccdd;
+        }
+        .flow-kiosk .kiosk-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+        }
+        .kiosk-badge {
+            background: #e2eaf3;
+            padding: 0.1rem 0.6rem;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+        .kiosk-badge.green {
+            background: #d9ead3;
+            color: #2a6b3a;
+        }
+        .kiosk-badge.red {
+            background: #fae1dd;
+            color: #a34a3a;
+        }
+
+        .flow-footer {
+            margin-top: 0.8rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #2c3e50;
+            background: #eef4fa;
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            display: inline-block;
+            align-self: center;
+        }
+
+        /* ===== 課題 & チャンス ===== */
+        .issue-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.8rem 1rem;
+            margin-top: 0.5rem;
+        }
+        .issue-item {
+            background: #fafcfe;
+            border-radius: 1rem;
+            border: 1px solid #e8ecf2;
+            padding: 0.6rem 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: #2c3e50;
+            transition: 0.1s;
+        }
+        .issue-item:hover {
+            border-color: #c8d4e0;
+            background: #f8faff;
+        }
+        .issue-item .icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .issue-item .text {
+            font-weight: 450;
+        }
+        .issue-item .sub {
+            font-size: 0.7rem;
+            color: #6a7f98;
+            display: block;
+            font-weight: 400;
+        }
+        .issue-warning {
+            margin-top: 0.8rem;
+            background: #fcf6ed;
+            border: 1px solid #f0e1cf;
+            border-radius: 2rem;
+            padding: 0.35rem 1.2rem;
+            display: inline-block;
+            font-size: 0.8rem;
+            color: #a67a4a;
+        }
+
         /* ===== 响应式 ===== */
         @media (max-width: 600px) {
             body { padding: 0.8rem; }
@@ -400,6 +561,8 @@
             th, td { padding: .25rem .15rem; }
             .month-card .month-title { font-size: .85rem; }
             .chart-card .card-header { font-size: .85rem; }
+            .flow-step { flex: 1 1 140px; min-width: 120px; }
+            .issue-grid { grid-template-columns: 1fr 1fr; }
         }
 
         .col-month { min-width: 40px; }
@@ -505,36 +668,109 @@
         </div>
 
         <!-- ============================================================ -->
-        <!-- 模块4：日次稼動率 -->
+        <!-- 模块4：新免税制度 リファンド方式 + 課題&チャンス -->
         <!-- ============================================================ -->
         <div class="card">
             <div class="header">
                 <div class="header-left">
-                    <h1>📈 日次稼動率</h1>
+                    <h1>🧾 新免税制度 「リファンド方式」</h1>
+                    <span class="badge">2026年11月1日より</span>
                 </div>
-                <div class="selector-group">
-                    <label for="monthStart">📅</label>
-                    <select id="monthStart">
-                        <option value="1">1月</option><option value="2">2月</option>
-                        <option value="3">3月</option><option value="4">4月</option>
-                        <option value="5">5月</option><option value="6" selected>6月</option>
-                        <option value="7">7月</option><option value="8">8月</option>
-                        <option value="9">9月</option><option value="10">10月</option>
-                        <option value="11">11月</option><option value="12">12月</option>
-                    </select>
-                    <span class="range-label">〜</span>
-                    <select id="monthEnd">
-                        <option value="1">1月</option><option value="2">2月</option>
-                        <option value="3">3月</option><option value="4">4月</option>
-                        <option value="5">5月</option><option value="6">6月</option>
-                        <option value="7">7月</option><option value="8" selected>8月</option>
-                        <option value="9">9月</option><option value="10">10月</option>
-                        <option value="11">11月</option><option value="12">12月</option>
-                    </select>
+                <div style="font-size:0.8rem; color:#5a7d9b; background:#eef3f8; padding:0.1rem 1rem; border-radius:40px;">
+                    フロー
                 </div>
             </div>
-            <div class="month-grid" id="dailyMonthGrid">
-                <div class="loading-overlay"><span class="loading-spinner"></span>読み込み中...</div>
+            <div class="tax-free-flow">
+                <!-- ステップ1 -->
+                <div class="flow-step">
+                    <div class="step-num">STEP 1</div>
+                    <div class="step-title">🏪 免税店</div>
+                    <div class="step-desc">
+                        店頭にて課税販売<br>
+                        <small>（従来の免税手続きは行わない）</small>
+                        <span style="display:block; margin-top:0.3rem; background:#eef3f8; border-radius:30px; padding:0.1rem 0.2rem; font-size:0.7rem;">
+                            QRコードを読み取り、<br>J-TaxRefundサイトへアクセス・登録
+                        </span>
+                        <small style="margin-top:0.2rem;">※一部店舗はOceanなどの<br>サードパーティブランドフォーム経由</small>
+                    </div>
+                </div>
+
+                <div class="flow-arrow">▶</div>
+
+                <!-- ステップ2 -->
+                <div class="flow-step">
+                    <div class="step-num">STEP 2</div>
+                    <div class="step-title">🧳 旅行者</div>
+                    <div class="step-desc">
+                        ↓ 登録ページへアクセス<br>
+                        旅券情報・連絡先・返金先を登録<br>
+                        ↓ 購入履歴を確認・登録
+                    </div>
+                </div>
+
+                <div class="flow-arrow">▶</div>
+
+                <!-- ステップ3 -->
+                <div class="flow-step">
+                    <div class="step-num">STEP 3</div>
+                    <div class="step-title">🛫 出国空港（税関手続き）</div>
+                    <div class="step-desc">
+                        下記いずれかの方法で持ち出し確認・判定
+                        <div style="margin-top:0.2rem; display:flex; flex-direction:column; gap:0.2rem;">
+                            <span class="sub-badge">① KIOSK端末 (パスポートがさす)</span>
+                            <span class="sub-badge">② Visit Japan Web (オンライン判定)</span>
+                        </div>
+                    </div>
+                    <!-- KIOSK 判定 -->
+                    <div class="flow-kiosk">
+                        <div style="font-weight:500; font-size:0.7rem; color:#1e3347;">KIOSK端末 判定結果</div>
+                        <div class="kiosk-row">
+                            <span class="kiosk-badge green">✅ 判定クリア → そのまま出国</span>
+                            <span class="kiosk-badge red">🔴 赤ランプ → 人工検査（税関窓口へ）</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-arrow">▶</div>
+
+                <!-- ステップ4 完了 -->
+                <div class="flow-step" style="background:#eef7f2; border-color:#b8d5c7;">
+                    <div class="step-num" style="background:#d0e6d9; color:#2a6b3a;">完了</div>
+                    <div class="step-title">💰 返金</div>
+                    <div class="step-desc">
+                        登録済み返金先へ<br>
+                        <strong>消費税相当額</strong>が返金
+                    </div>
+                    <div style="margin-top:0.2rem; font-size:0.7rem; color:#2a6b3a; background:#dcefe1; border-radius:30px; padding:0.05rem 0.5rem; display:inline-block;">
+                        出国完了
+                    </div>
+                </div>
+            </div>
+            <!-- 補足 -->
+            <div style="display:flex; justify-content:center; margin-top:0.4rem;">
+                <span style="background:#f2f6fc; padding:0.2rem 1.2rem; border-radius:40px; font-size:0.75rem; color:#3a5a7a; border:1px solid #dce6f0;">
+                    📌 2026年11月1日よりスタート
+                </span>
+            </div>
+
+            <!-- ===== 課題 & チャンス（新規追加） ===== -->
+            <div style="margin-top:1.8rem; border-top:2px dashed #e2e9f2; padding-top:1.2rem;">
+                <div class="header" style="border-bottom:1px solid #e8ecf2; margin-bottom:0.6rem; padding-bottom:0.4rem;">
+                    <div class="header-left">
+                        <h1 style="font-size:1.2rem;">⚠️ 課題 &amp; チャンス</h1>
+                        <span class="badge">空港トラブル防止</span>
+                    </div>
+                </div>
+                <div class="issue-grid">
+                    <div class="issue-item"><span class="icon">🔄</span><span class="text">KIOSK 混みすぎ問題</span></div>
+                    <div class="issue-item"><span class="icon">👴</span><span class="text">ネット登録で詰む方（高齢者）</span></div>
+                    <div class="issue-item"><span class="icon">🚨</span><span class="text">赤ランプで時間切れフライト</span></div>
+                    <div class="issue-item"><span class="icon">📋</span><span class="text">ルール複雑で失敗する人続出</span></div>
+                    <div class="issue-item"><span class="icon">⏳</span><span class="text">フライト時間に間に合わず諦める人も</span></div>
+                </div>
+                <div class="issue-warning">
+                    💡 事前に知っておかないと <strong>空港で泣くことになるかも…</strong>
+                </div>
             </div>
         </div>
 
@@ -572,8 +808,6 @@
         const CATEGORIES = ['一般問い合わせ系', '決済・システム障害系', '商品・サービス品質系', '配送・受渡し系', '不正・詐欺・悪質取引系'];
         const KPI_LABELS = ['PMS作成', 'カスタマーサポート', 'インボイス連携', '販促物発注', 'Discover店舗ページ', 'クーポン登録', 'システムAPI更新'];
         const QUARTER_MAP = { Q1: [1, 2, 3], Q2: [4, 5, 6], Q3: [7, 8, 9], Q4: [10, 11, 12] };
-        const DAYS_IN_MONTH = { 1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31 };
-        const TOTAL_MINUTES = 1920;
 
         // 存储图表实例
         const chartInstances = {};
@@ -814,7 +1048,6 @@
             const grid = document.getElementById('kpiMonthGrid');
             const months = QUARTER_MAP[quarter] || [4, 5, 6];
 
-            // 清除旧图表（只清除kpi相关的）
             Object.keys(chartInstances).forEach(k => {
                 if (k.startsWith('kpi_')) destroyChart(k);
             });
@@ -880,124 +1113,7 @@
         }
 
         // ================================================================
-        // 模块4：日次稼動率
-        // ================================================================
-        function collectDailyData(data, startMonth, endMonth) {
-            const result = {};
-            for (let m = startMonth; m <= endMonth; m++) result[m] = {};
-            if (!data) return result;
-
-            const timeFields = ['pms_time', 'invoice_time', 'promo_time', 'discover_time', 'coupon_time', 'wsystem_time', 'wechat_exchange_time', 'wechat_store_confirm_time', 'ali_exchange_time', 'ali_store_confirm_time'];
-
-            data.forEach(row => {
-                if (!row.work_date) return;
-                try {
-                    const date = new Date(row.work_date);
-                    if (isNaN(date.getTime())) return;
-                    const m = date.getMonth() + 1;
-                    const d = date.getDate();
-                    if (m < startMonth || m > endMonth) return;
-                    let totalTime = 0;
-                    timeFields.forEach(f => {
-                        if (row[f] !== undefined && row[f] !== null) {
-                            const v = Number(row[f]);
-                            if (!isNaN(v)) totalTime += v;
-                        }
-                    });
-                    const rate = Math.min(Math.max((totalTime / TOTAL_MINUTES) * 100, 0), 100);
-                    result[m][d] = { day: d, totalTime: totalTime, rate: Math.round(rate * 10) / 10 };
-                } catch (e) { /* ignore */ }
-            });
-
-            for (let m = startMonth; m <= endMonth; m++) {
-                const sorted = {};
-                Object.keys(result[m]).sort((a, b) => Number(a) - Number(b)).forEach(k => { sorted[k] = result[m][k]; });
-                result[m] = sorted;
-            }
-            return result;
-        }
-
-        function renderDaily(monthlyData, startMonth, endMonth) {
-            const grid = document.getElementById('dailyMonthGrid');
-
-            Object.keys(chartInstances).forEach(k => {
-                if (k.startsWith('daily_')) destroyChart(k);
-            });
-
-            let hasData = false;
-            for (let m = startMonth; m <= endMonth; m++) {
-                if (monthlyData[m] && Object.keys(monthlyData[m]).length > 0) { hasData = true; break; }
-            }
-            if (!hasData) {
-                grid.innerHTML = '<div class="empty-state">📭 データがありません</div>';
-                return;
-            }
-
-            grid.innerHTML = '';
-            for (let m = startMonth; m <= endMonth; m++) {
-                const monthData = monthlyData[m] || {};
-                const sortedDays = Object.keys(monthData).sort((a, b) => Number(a) - Number(b));
-                const filteredDays = sortedDays.filter(d => monthData[d].rate > 0);
-
-                if (filteredDays.length === 0) {
-                    const card = document.createElement('div');
-                    card.className = 'month-card';
-                    card.innerHTML = `<div class="month-title">${m}月</div><div class="empty-state" style="padding:0.3rem;font-size:0.8rem;">データなし</div>`;
-                    grid.appendChild(card);
-                    continue;
-                }
-
-                const labels = filteredDays.map(d => `${d}日`);
-                const rates = filteredDays.map(d => monthData[d].rate);
-                const times = filteredDays.map(d => monthData[d].totalTime);
-
-                const card = document.createElement('div');
-                card.className = 'month-card';
-                const canvasId = `daily_${m}`;
-                card.innerHTML = `<div class="month-title">${m}月</div><div class="chart-container"><canvas id="${canvasId}"></canvas></div>`;
-                grid.appendChild(card);
-
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) continue;
-                const ctx = canvas.getContext('2d');
-
-                const chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{ data: rates, backgroundColor: COLORS.bar, borderColor: COLORS.barBorder, borderWidth: 1.5, borderRadius: 3, barPercentage: 0.6 }]
-                    },
-                    options: {
-                        indexAxis: 'x',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(c) {
-                                        const idx = c.dataIndex;
-                                        return `稼動率: ${c.raw.toFixed(1)}% (${times[idx] || 0}分)`;
-                                    },
-                                    title: function(items) { return items[0].label; }
-                                }
-                            },
-                            datalabels: { display: false }
-                        },
-                        scales: {
-                            x: { grid: { display: false }, ticks: { color: '#6a7f98', font: { size: 8 }, maxTicksLimit: 31 } },
-                            y: { min: 0, max: 50, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { stepSize: 10, color: '#6a7f98', font: { size: 8 }, callback: function(v) { return v + '%'; } }, title: { display: false } }
-                        },
-                        layout: { padding: { top: 14, right: 4, bottom: 4, left: 4 } }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-                chartInstances[canvasId] = chart;
-            }
-        }
-
-        // ================================================================
-        // 主加载函数
+        // 主加载函数 (不再包含日次稼動率)
         // ================================================================
         let cachedData = null;
 
@@ -1011,7 +1127,6 @@
                     document.getElementById('alipayLegend').innerHTML = '<span class="empty-state">データなし</span>';
                     document.getElementById('wechatLegend').innerHTML = '<span class="empty-state">データなし</span>';
                     document.getElementById('kpiMonthGrid').innerHTML = '<div class="empty-state">📭 データがありません</div>';
-                    document.getElementById('dailyMonthGrid').innerHTML = '<div class="empty-state">📭 データがありません</div>';
                     return;
                 }
 
@@ -1031,22 +1146,13 @@
                 const kpiData = aggregateKPIByQuarter(data, kpiQuarter);
                 renderKPIs(kpiData, kpiQuarter);
 
-                // 模块4
-                const start = parseInt(document.getElementById('monthStart').value) || 6;
-                let end = parseInt(document.getElementById('monthEnd').value) || 8;
-                if (end - start > 2) { end = start + 2; document.getElementById('monthEnd').value = end; }
-                const dailyData = collectDailyData(data, start, end);
-                renderDaily(dailyData, start, end);
-
                 // ---- 绑定事件 ----
-                // 模块1 年份切换
                 document.getElementById('yearSelect').addEventListener('change', function() {
                     const y = parseInt(this.value);
                     const md = aggregateByMonth(cachedData, y);
                     renderBusinessTable(md);
                 });
 
-                // 模块2 季度切换
                 document.getElementById('quarterSelect').addEventListener('change', function() {
                     const q = this.value;
                     const { aliCategory: ac, wechatCategory: wc } = aggregateCategoryByQuarter(cachedData, q);
@@ -1054,32 +1160,13 @@
                     renderCategoryChart('wechatChart', 'wechatLegend', 'wechatQuarterLabel', wc, q);
                 });
 
-                // 模块3 季度切换
                 document.getElementById('kpiQuarterSelect').addEventListener('change', function() {
                     const q = this.value;
                     const kd = aggregateKPIByQuarter(cachedData, q);
                     renderKPIs(kd, q);
                 });
 
-                // 模块4 月份切换
-                document.getElementById('monthStart').addEventListener('change', function() {
-                    let s = parseInt(this.value);
-                    let e = parseInt(document.getElementById('monthEnd').value);
-                    if (e - s > 2) { e = s + 2; document.getElementById('monthEnd').value = e; }
-                    if (s > e) { [document.getElementById('monthStart').value, document.getElementById('monthEnd').value] = [e, s]; s = parseInt(document.getElementById('monthStart').value); e = parseInt(document.getElementById('monthEnd').value); }
-                    const dd = collectDailyData(cachedData, s, e);
-                    renderDaily(dd, s, e);
-                });
-                document.getElementById('monthEnd').addEventListener('change', function() {
-                    let e = parseInt(this.value);
-                    let s = parseInt(document.getElementById('monthStart').value);
-                    if (e - s > 2) { s = e - 2; document.getElementById('monthStart').value = s; }
-                    if (s > e) { [document.getElementById('monthStart').value, document.getElementById('monthEnd').value] = [e, s]; s = parseInt(document.getElementById('monthStart').value); e = parseInt(document.getElementById('monthEnd').value); }
-                    const dd = collectDailyData(cachedData, s, e);
-                    renderDaily(dd, s, e);
-                });
-
-                console.log('✅ 全てのダッシュボードが正常に読み込まれました');
+                console.log('✅ 全てのダッシュボードが正常に読み込まれました (日次稼動率を削除し、免税フロー＋課題を追加)');
 
             } catch (err) {
                 console.error('❌ 加载失败:', err);
