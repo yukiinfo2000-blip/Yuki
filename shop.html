@@ -145,8 +145,8 @@
         /* 餅図 */
         .pie-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
         }
 
         .pie-item {
@@ -219,6 +219,12 @@
             margin-bottom: 12px;
         }
 
+        @media (max-width: 1024px) {
+            .pie-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .metric-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -285,8 +291,9 @@
         <div class="card">
             <h2 style="font-size:18px;font-weight:700;color:#0f3b5e;margin-bottom:16px;">📈 成果（予定のため、仮データで表示） <small style="font-weight:400;font-size:13px;color:#64748b;margin-left:8px;">加盟店・活性</small></h2>
             <div class="pie-grid">
+                <!-- 横浜市商店街（已完成） -->
                 <div class="pie-item">
-                    <h3>FY26 横浜市商店街</h3>
+                    <h3>FY26 横浜市商店街（已完成）</h3>
                     <div class="pie-box" style="position:relative;">
                         <canvas id="pieYokohama"></canvas>
                         <div class="pie-center-text" id="pieYokohamaCenter">
@@ -295,12 +302,24 @@
                         </div>
                     </div>
                 </div>
+                <!-- 横浜中華街（已完成） -->
                 <div class="pie-item">
-                    <h3>FY26 横浜中華街</h3>
+                    <h3>FY26 横浜中華街（已完成）</h3>
                     <div class="pie-box" style="position:relative;">
                         <canvas id="pieChinatown"></canvas>
                         <div class="pie-center-text" id="pieChinatownCenter">
                             <div class="number" id="pieChinatownNum">0</div>
+                            <div class="label">加盟店数</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 横浜駅西口＆横浜市商店街（事務作業中、コール作業未依頼） -->
+                <div class="pie-item">
+                    <h3>FY26 横浜駅西口＆横浜市商店街<br><span style="font-size:13px;font-weight:400;color:#64748b;">（事務作業中、コール作業未依頼）</span></h3>
+                    <div class="pie-box" style="position:relative;">
+                        <canvas id="pieWestExit"></canvas>
+                        <div class="pie-center-text" id="pieWestExitCenter">
+                            <div class="number" id="pieWestExitNum">310</div>
                             <div class="label">加盟店数</div>
                         </div>
                     </div>
@@ -341,7 +360,6 @@
         // ============================================================
         async function fetchData() {
             try {
-                // 設定チェック
                 if (!SUPABASE_URL || SUPABASE_URL === 'https://your-project.supabase.co') {
                     setStatus('Supabase URLが設定されていません。サンプルデータを表示します。', 'error');
                     return null;
@@ -353,7 +371,6 @@
 
                 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-                // テーブル存在確認のため、1件取得
                 const { data: checkData, error: checkError } = await supabaseClient
                     .from(TABLE_NAME)
                     .select('*')
@@ -365,7 +382,6 @@
                     return null;
                 }
 
-                // 全件取得
                 const { data, error } = await supabaseClient
                     .from(TABLE_NAME)
                     .select('*')
@@ -649,6 +665,70 @@
         }
 
         // ============================================================
+        // 固定饼图（横浜駅西口用：加盟店数310，活性仮データ）
+        // ============================================================
+        function renderFixedPie(canvasId, centerNumId, totalStores, activeStores) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const inactive = Math.max(0, totalStores - activeStores);
+
+            const centerNum = document.getElementById(centerNumId);
+            if (centerNum) {
+                centerNum.textContent = totalStores.toLocaleString();
+            }
+
+            const existing = Chart.getChart(canvasId);
+            if (existing) existing.destroy();
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['活性加盟店', '未活性'],
+                    datasets: [{
+                        data: [activeStores, inactive],
+                        backgroundColor: ['#e67e22', '#d1d9e6'],
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 11, weight: '600', family: "'Noto Sans SC','HarmonyOS Sans SC',sans-serif" },
+                                boxWidth: 14,
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                            }
+                        },
+                        datalabels: {
+                            color: '#1e293b',
+                            font: { size: 12, weight: '700', family: "'Noto Sans SC','HarmonyOS Sans SC',sans-serif" },
+                            formatter: (v, ctx) => {
+                                const label = ctx.chart.data.labels[ctx.dataIndex];
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((v / total) * 100) : 0;
+                                return `${v}\n${percentage}%`;
+                            },
+                            anchor: 'end',
+                            align: 'end',
+                            offset: 4,
+                            textAlign: 'center',
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // ============================================================
         // メイン描画
         // ============================================================
         async function renderDashboard() {
@@ -656,11 +736,9 @@
                 const result = await fetchData();
 
                 if (result === null) {
-                    // エラー時はデモデータ
                     allData = generateDemoData();
                     isUsingDemo = true;
                 } else if (result === 'empty' || result.length === 0) {
-                    // 空テーブルはデモデータ
                     allData = generateDemoData();
                     isUsingDemo = true;
                 } else {
@@ -693,6 +771,9 @@
                 renderPie('pieYokohama', 'pieYokohamaNum', yActual, yActive);
                 renderPie('pieChinatown', 'pieChinatownNum', sActual, sActive);
 
+                // ---- 横浜駅西口（固定データ：加盟店310、活性は仮で85） ----
+                renderFixedPie('pieWestExit', 'pieWestExitNum', 310, 85);
+
                 if (isUsingDemo) {
                     setStatus('サンプルデータを表示中（実際のデータはSupabaseから取得できませんでした）', 'info');
                 }
@@ -700,10 +781,8 @@
             } catch (e) {
                 console.error('Render error:', e);
                 setStatus(`描画エラー: ${e.message}`, 'error');
-                // エラー時もデモデータで表示を試みる
                 if (allData.length === 0) {
                     allData = generateDemoData();
-                    // 再描画試行（簡易）
                     const yMap = aggregateByMonth(allData, 'y');
                     renderMetrics('yMetricGrid', yMap);
                     renderTrend('yTrendChart', yMap);
