@@ -292,6 +292,36 @@
         }
         .officeChartBox canvas { width: 100% !important; height: 100% !important; max-height: 260px; }
 
+        /* 開通メール件数チャート用 */
+        .mailChartBox {
+            background: #f8fafc;
+            padding: 16px 16px 10px 16px;
+            border-radius: 12px;
+            border: 1px solid #eef2f7;
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+        .mailChartBox .chartHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .mailChartBox .chartHeader h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e3b5a;
+            margin: 0;
+            letter-spacing: 0.2px;
+        }
+        .mailChartBox .canvasWrap {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+        .mailChartBox canvas { width: 100% !important; height: 100% !important; max-height: 260px; }
+
         @media (max-width: 1100px) {
             .doubleChartGrid { grid-template-columns: 1fr; }
             .officeChartGrid { grid-template-columns: 1fr; }
@@ -303,6 +333,7 @@
             .chartBox { height: 400px; }
             .chartCard { height: 260px; }
             .officeChartBox { height: 280px; }
+            .mailChartBox { height: 280px; }
             .officeGrid { grid-template-columns: repeat(3, 1fr); }
             .unit { padding: 16px; }
             .control-bar { flex-direction: column; align-items: stretch; }
@@ -314,11 +345,23 @@
             .chartBox { height: 340px; }
             .chartCard { height: 220px; }
             .officeChartBox { height: 240px; }
+            .mailChartBox { height: 240px; }
         }
     </style>
 </head>
 <body>
 <div class="container">
+
+    <!-- ============================================================ -->
+    <!-- 新規：開通メール件数（固定データ） -->
+    <!-- ============================================================ -->
+    <div class="unit">
+        <div class="unit-title">📧 開通メール件数</div>
+        <div class="mailChartBox">
+            <div class="chartHeader"><h4>📧 月別開通メール件数</h4></div>
+            <div class="canvasWrap"><canvas id="mailChart"></canvas></div>
+        </div>
+    </div>
 
     <!-- ============================================================ -->
     <!-- ユニット1：📅 年度 + 月次電話量 + 各項目個別 -->
@@ -478,9 +521,80 @@
     // ============================================================
     let callChart = null, chartTotal = null, chartRateTrend = null, chartRatio = null;
     let officeChart1 = null, officeChart2 = null;
+    let mailChart = null;
     let currentMonthlyData = [];
     let currentYear = '2026';
     let allDataCache = {};
+
+    // ============================================================
+    // 開通メール件数チャート（固定データ）
+    // ============================================================
+    function renderMailChart() {
+        const mailLabels = ["1月","2月","3月","4月","5月","6月","7月","8月"];
+        const mailData = [29, 35, 33, 46, 33, 29, 40, 35];
+        const maxVal = Math.max(...mailData, 0);
+        const suggestedMax = maxVal > 0 ? Math.ceil(maxVal / 10) * 10 + 10 : 50;
+
+        if (mailChart) mailChart.destroy();
+        const ctx = document.getElementById('mailChart').getContext('2d');
+        mailChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: mailLabels,
+                datasets: [{
+                    label: '開通メール件数',
+                    data: mailData,
+                    backgroundColor: '#2d7d9a',
+                    borderColor: '#1a5a72',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    barPercentage: 0.6,
+                }]
+            },
+            plugins: [ChartDataLabels],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(30,40,55,0.9)',
+                        titleColor: '#f0f4fe',
+                        bodyColor: '#f0f4fe',
+                        cornerRadius: 8,
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return '開通メール件数: ' + context.raw + '件';
+                            }
+                        }
+                    },
+                    legend: { display: false },
+                    datalabels: {
+                        color: '#1e293b',
+                        font: { weight: '700', size: 12, family: "'HarmonyOS Sans SC',sans-serif" },
+                        formatter: (v) => v > 0 ? v : '',
+                        anchor: 'end',
+                        align: 'end',
+                        offset: 0,
+                        clamp: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: suggestedMax,
+                        grid: { color: '#e2e8f0' },
+                        title: { display: false },
+                        ticks: { font: { size: 11 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 12, weight: '500' } }
+                    }
+                }
+            }
+        });
+    }
 
     // ============================================================
     // 事務作業統計（詳細用）
@@ -1046,6 +1160,7 @@
     window.onload = function() {
         const now = new Date();
         document.getElementById('month').value = now.toISOString().slice(0,7);
+        renderMailChart(); // 開通メール件数チャートを描画
         loadYearData();
         loadByMonth();
     };
