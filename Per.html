@@ -4,136 +4,161 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>FY26_アクティブ率</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js">
+    </script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2">
+    </script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            background:#f5f7fb;
-            font-family: "HarmonyOS Sans SC", "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
-            color:#18253d;
-            padding:14px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        :root{
-            --bg:#f5f7fb;
-            --card:#ffffff;
-            --border:#e7ebf2;
-            --text:#18253d;
-            --sub:#7d8799;
-            --green:#62c26f;
-            --green-dark:#2f9e44;
-            --blue:#5c93ff;
-            --blue-dark:#2f67d8;
-            --line:#ff6b6b;
-            --shadow:0 2px 10px rgba(15,23,42,0.04);
+        body {
+            background: #f5f7fb;
+            font-family: "HarmonyOS Sans SC", "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
+            color: #18253d;
+            padding: 14px;
+        }
+        :root {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --border: #e7ebf2;
+            --text: #18253d;
+            --sub: #7d8799;
+            --green: #62c26f;
+            --green-dark: #2f9e44;
+            --blue: #5c93ff;
+            --blue-dark: #2f67d8;
+            --line: #ff6b6b;
+            --shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
         }
         .header {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:14px;
-            gap:12px;
-            flex-wrap:wrap;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         .header-left h1 {
-            font-size:28px;
-            font-weight:800;
-            line-height:1;
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1;
             font-family: inherit;
         }
         .header-left p {
-            display: none;  /* サブテキストを非表示 */
+            display: none;
         }
         .header-right {
-            display:flex;
-            gap:10px;
-            align-items:center;
-            flex-wrap:wrap;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
         }
         .header-card {
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:10px;
-            padding:10px 14px;
-            min-width:150px;
-            box-shadow:var(--shadow);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            min-width: 150px;
+            box-shadow: var(--shadow);
         }
-        .header-label { font-size:10px; color:var(--sub); margin-bottom:3px; }
-        .header-value { font-size:13px; font-weight:700; }
-        /* 対象月の指定は削除 (input非表示) */
-        .month-input { display: none; }
+        .header-label {
+            font-size: 10px;
+            color: var(--sub);
+            margin-bottom: 3px;
+        }
+        .header-value {
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .month-input {
+            display: none;
+        }
         .reload-btn {
-            height:40px;
-            padding:0 18px;
-            border:none;
-            border-radius:10px;
-            background:#1d3c78;
-            color:#fff;
-            font-size:13px;
-            font-weight:700;
-            cursor:pointer;
-            transition:0.2s;
+            height: 40px;
+            padding: 0 18px;
+            border: none;
+            border-radius: 10px;
+            background: #1d3c78;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
             font-family: inherit;
         }
-        .reload-btn:hover { opacity:0.92; }
-        .dashboard {
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:12px;
+        .reload-btn:hover {
+            opacity: 0.92;
         }
-        .full { grid-column:1 / -1; }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .full {
+            grid-column: 1 / -1;
+        }
         .card {
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:14px;
-            padding:12px;
-            box-shadow:var(--shadow);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: var(--shadow);
         }
         .card-title {
-            font-size:15px;
-            font-weight:800;
-            margin-bottom:8px;
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 8px;
             font-family: inherit;
         }
         .chart {
-            width:100%;
-            height:190px;
+            width: 100%;
+            height: 190px;
         }
         .total-grid {
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:10px;
-            margin-top:8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 8px;
         }
         .total-box {
-            border:1px solid var(--border);
-            border-radius:10px;
-            padding:10px 12px;
-            background:#fff;
-            display:flex;
-            flex-direction:column;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
         }
         .total-label {
-            font-size:10px;
-            color:var(--sub);
-            margin-bottom:4px;
+            font-size: 10px;
+            color: var(--sub);
+            margin-bottom: 4px;
         }
         .total-value {
-            font-size:18px;
-            font-weight:800;
-            display:flex;
-            align-items:center;
-            flex-wrap:wrap;
-            gap:6px 10px;
+            font-size: 18px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 10px;
         }
-        .total-value.blue { color:var(--blue-dark); }
-        .total-value.green { color:var(--green-dark); }
-        .total-value .total-unit { font-size:11px; margin-left:3px; color:#6b7280; }
-        /* ---- シルバーバッジ (アクティブ率) ---- */
+        .total-value.blue {
+            color: var(--blue-dark);
+        }
+        .total-value.green {
+            color: var(--green-dark);
+        }
+        .total-value .total-unit {
+            font-size: 11px;
+            margin-left: 3px;
+            color: #6b7280;
+        }
         .rate-badge {
-            display:inline-flex;
-            align-items:center;
-            gap:4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             background: linear-gradient(145deg, #f0f2f5, #dce0e6);
             border: 1px solid #c8cdd6;
             border-radius: 30px;
@@ -141,7 +166,7 @@
             font-size: 13px;
             font-weight: 700;
             color: #2c3e50;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             white-space: nowrap;
             letter-spacing: 0.3px;
         }
@@ -150,7 +175,7 @@
             color: #4a5568;
             font-size: 11px;
             letter-spacing: 0.5px;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
             padding: 0 4px 0 0;
         }
         .rate-badge .rate-value {
@@ -158,253 +183,320 @@
             color: #1a2634;
         }
         .reason {
-            margin-top:10px;
-            border-top:1px dashed #d7dce5;
-            padding-top:8px;
+            margin-top: 10px;
+            border-top: 1px dashed #d7dce5;
+            padding-top: 8px;
         }
-        .reason-title { font-size:11px; font-weight:700; margin-bottom:5px; }
+        .reason-title {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
         .reason-list {
-            display:flex;
-            flex-wrap:wrap;
-            gap:8px 18px;
-            list-style:none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            list-style: none;
         }
-        .reason-list li { font-size:10px; color:#707b8f; }
+        .reason-list li {
+            font-size: 10px;
+            color: #707b8f;
+        }
+
+        /* ReCall レイアウト：左カラム（グラフ＋総数）と右カラム（ピーチャート＋内訳） */
         .recall-wrap {
-            display:grid;
-            grid-template-columns:1fr 300px;
-            gap:12px;
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 16px;
+            align-items: stretch;
         }
-        .recall-info {
-            border:1px solid var(--border);
-            border-radius:12px;
-            padding:14px;
-            background:#fff;
+        .recall-left {
+            display: flex;
+            flex-direction: column;
         }
-        .recall-info h3 { font-size:14px; margin-bottom:10px; }
-        .recall-line { font-size:11px; line-height:1.9; color:#4b5563; }
-        .divider { height:1px; background:#d9dee7; margin:12px 0; }
-        @media(max-width:1100px){
-            .dashboard { grid-template-columns:1fr; }
-            .recall-wrap { grid-template-columns:1fr; }
-            .header { flex-direction:column; align-items:stretch; }
+        .recall-right {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 14px 10px 14px;
+            background: #fafbfc;
+            display: flex;
+            flex-direction: column;
+        }
+        .recall-right h3 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #1a2634;
+        }
+        .recall-pie {
+            width: 100%;
+            height: 150px;
+            flex-shrink: 0;
+        }
+        .recall-detail {
+            margin-top: 4px;
+            font-size: 11px;
+            line-height: 1.8;
+            color: #4b5563;
+        }
+        .recall-detail .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1px 0;
+            border-bottom: 1px dashed #eef2f7;
+        }
+        .recall-detail .item:last-child {
+            border-bottom: none;
+        }
+        .recall-detail .label {
+            color: #6b7280;
+        }
+        .recall-detail .value {
+            font-weight: 600;
+            color: #1a2634;
+        }
+        .divider {
+            height: 1px;
+            background: #d9dee7;
+            margin: 8px 0;
+        }
+        .recall-note {
+            font-size: 10px;
+            color: #8a94a6;
+            margin-top: 4px;
+        }
+
+        @media(max-width:1100px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .recall-wrap {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="header-left">
-        <h1>FY26_アクティブ率</h1>
-        <!-- サブテキスト非表示 -->
-    </div>
-    <div class="header-right">
-        <!-- 対象月の指定を削除 (input非表示) -->
-        <button class="reload-btn" onclick="loadDashboard()">↻ データ読込</button>
-        <div class="header-card">
-            <div class="header-label">データ更新日時</div>
-            <div class="header-value" id="updateTime">-</div>
+    <div class="header">
+        <div class="header-left">
+            <h1>FY26_アクティブ率</h1>
         </div>
-    </div>
-</div>
-
-<div class="dashboard">
-
-    <!-- カード1: 開通通知送信案件 (アクティブ率ライン) + 総アクティブ率をシルバーバッジで表示 -->
-    <div class="card full">
-        <div class="card-title">開通通知送信案件 · アクティブ率</div>
-        <div id="chart1" class="chart"></div>
-        <div class="total-grid">
-            <div class="total-box">
-                <div class="total-label">架電必要 総数</div>
-                <div class="total-value green" id="top1">
-                    <span id="top1Count">0</span><span class="total-unit">件</span>
-                    <!-- シルバーバッジ: アクティブ率 -->
-                    <span class="rate-badge" id="totalRateOnTop">
-                        <span class="rate-label">アクティブ率</span>
-                        <span class="rate-value" id="rateValue">---</span>
-                    </span>
-                </div>
-            </div>
-            <div class="total-box">
-                <div class="total-label">架電不要 総数</div>
-                <div class="total-value blue" id="top2">
-                    <span id="top2Count">0</span><span class="total-unit">件</span>
-                </div>
-            </div>
-        </div>
-        <div class="reason">
-            <div class="reason-title">架電不要理由：</div>
-            <ul class="reason-list">
-                <li>別件で問い合わせ済み</li><li>PayPay未開通</li><li>決済あり</li>
-                <li>メール問い合わせ</li><li>既に導入済み</li><li>担当者不在</li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- カード2: ライセンス認証済み -->
-    <div class="card">
-        <div class="card-title">ライセンス認証済み</div>
-        <div id="chart2" class="chart"></div>
-        <div class="total-grid">
-            <div class="total-box">
-                <div class="total-label">架電で認証済み 総数</div>
-                <div class="total-value green" id="license1">
-                    <span id="license1Count">0</span><span class="total-unit">件</span>
-                </div>
-            </div>
-            <div class="total-box">
-                <div class="total-label">架電不要で認証済み 総数</div>
-                <div class="total-value blue" id="license2">
-                    <span id="license2Count">0</span><span class="total-unit">件</span>
-                </div>
+        <div class="header-right">
+            <button class="reload-btn" onclick="loadDashboard()">↻ データ読込</button>
+            <div class="header-card">
+                <div class="header-label">データ更新日時</div>
+                <div class="header-value" id="updateTime">-</div>
             </div>
         </div>
     </div>
 
-    <!-- カード3: 決済済み -->
-    <div class="card">
-        <div class="card-title">決済済み</div>
-        <div id="chart3" class="chart"></div>
-        <div class="total-grid">
-            <div class="total-box">
-                <div class="total-label">架電で決済済み 総数</div>
-                <div class="total-value green" id="payment1">
-                    <span id="payment1Count">0</span><span class="total-unit">件</span>
-                </div>
-            </div>
-            <div class="total-box">
-                <div class="total-label">架電不要で決済済み 総数</div>
-                <div class="total-value blue" id="payment2">
-                    <span id="payment2Count">0</span><span class="total-unit">件</span>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="dashboard">
 
-    <!-- カード4: ReCall -->
-    <div class="card full">
-        <div class="recall-wrap">
-            <div>
-                <div class="card-title">ReCall</div>
-                <div id="chart4" class="chart"></div>
-                <div class="total-grid">
-                    <div class="total-box">
-                        <div class="total-label">件数 総数</div>
-                        <div class="total-value green" id="recall1">
-                            <span id="recall1Count">0</span><span class="total-unit">件</span>
-                        </div>
+        <!-- カード1 -->
+        <div class="card full">
+            <div class="card-title">開通通知送信案件 · アクティブ率</div>
+            <div id="chart1" class="chart"></div>
+            <div class="total-grid">
+                <div class="total-box">
+                    <div class="total-label">架電必要 総数</div>
+                    <div class="total-value green" id="top1">
+                        <span id="top1Count">0</span><span class="total-unit">件</span>
+                        <span class="rate-badge" id="totalRateOnTop">
+                            <span class="rate-label">アクティブ率</span>
+                            <span class="rate-value" id="rateValue">---</span>
+                        </span>
                     </div>
-                    <div class="total-box">
-                        <div class="total-label">認証数 総数</div>
-                        <div class="total-value blue" id="recall2">
-                            <span id="recall2Count">0</span><span class="total-unit">件</span>
-                        </div>
+                </div>
+                <div class="total-box">
+                    <div class="total-label">架電不要 総数</div>
+                    <div class="total-value blue" id="top2">
+                        <span id="top2Count">0</span><span class="total-unit">件</span>
                     </div>
                 </div>
             </div>
-            <div class="recall-info">
-                <h3>ReCall条件</h3>
-                <div class="recall-line">コール結果：案内済み</div>
-                <div class="recall-line">ステータス：7日間で未認証</div>
-                <div class="divider"></div>
-                <div class="recall-line">顧客コメント：MPM、後日で開店</div>
-                <div class="recall-line">（例：開店予定は5月以降、6月オープン予定など）</div>
-                <div class="divider"></div>
-                <div class="recall-line">対応施策：後日で開店顧客に対して、開店前後再連絡予定</div>
+            <div class="reason">
+                <div class="reason-title">架電不要理由：</div>
+                <ul class="reason-list">
+                    <li>別件で問い合わせ済み</li><li>PayPay未開通</li><li>決済あり</li>
+                    <li>メール問い合わせ</li><li>既に導入済み</li><li>担当者不在</li>
+                </ul>
             </div>
         </div>
+
+        <!-- カード2 -->
+        <div class="card">
+            <div class="card-title">ライセンス認証済み</div>
+            <div id="chart2" class="chart"></div>
+            <div class="total-grid">
+                <div class="total-box">
+                    <div class="total-label">架電で認証済み 総数</div>
+                    <div class="total-value green" id="license1">
+                        <span id="license1Count">0</span><span class="total-unit">件</span>
+                    </div>
+                </div>
+                <div class="total-box">
+                    <div class="total-label">架電不要で認証済み 総数</div>
+                    <div class="total-value blue" id="license2">
+                        <span id="license2Count">0</span><span class="total-unit">件</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- カード3 -->
+        <div class="card">
+            <div class="card-title">決済済み</div>
+            <div id="chart3" class="chart"></div>
+            <div class="total-grid">
+                <div class="total-box">
+                    <div class="total-label">架電で決済済み 総数</div>
+                    <div class="total-value green" id="payment1">
+                        <span id="payment1Count">0</span><span class="total-unit">件</span>
+                    </div>
+                </div>
+                <div class="total-box">
+                    <div class="total-label">架電不要で決済済み 総数</div>
+                    <div class="total-value blue" id="payment2">
+                        <span id="payment2Count">0</span><span class="total-unit">件</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- カード4: ReCall（5月～7月） 左: 柱形図＋総数 / 右: ピーチャート＋内訳 -->
+        <div class="card full">
+            <div class="card-title">ReCall（5月～7月）</div>
+            <div class="recall-wrap">
+                <!-- 左側：柱形図 -->
+                <div class="recall-left">
+                    <div id="chart4" class="chart"></div>
+                    <div class="total-grid">
+                        <div class="total-box">
+                            <div class="total-label">件数 総数</div>
+                            <div class="total-value green" id="recall1">
+                                <span id="recall1Count">0</span><span class="total-unit">件</span>
+                            </div>
+                        </div>
+                        <div class="total-box">
+                            <div class="total-label">認証数 総数</div>
+                            <div class="total-value blue" id="recall2">
+                                <span id="recall2Count">0</span><span class="total-unit">件</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：ピーチャート + 内訳テキスト -->
+                <div class="recall-right">
+                    <h3>ステータス内訳</h3>
+                    <div id="recallPie" class="recall-pie"></div>
+                    <div class="recall-detail">
+                        <div class="item"><span class="label">準備中</span><span class="value">14件</span></div>
+                        <div class="item"><span class="label">繋がらなかった</span><span class="value">13件</span></div>
+                        <div class="item"><span class="label">案内拒否</span><span class="value">4件</span></div>
+                        <div class="item"><span class="label">取次店対応</span><span class="value">3件</span></div>
+                        <div class="item"><span class="label">別アカウント利用中</span><span class="value">1件</span></div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="recall-note">※ ReCall（5月～7月）のステータス別件数</div>
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
 
-<script>
-    const SUPABASE_URL = 'https://ieijoczgnndiqmowadty.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script>
+        const SUPABASE_URL = 'https://ieijoczgnndiqmowadty.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const chart1 = echarts.init(document.getElementById('chart1'));
-    const chart2 = echarts.init(document.getElementById('chart2'));
-    const chart3 = echarts.init(document.getElementById('chart3'));
-    const chart4 = echarts.init(document.getElementById('chart4'));
+        const chart1 = echarts.init(document.getElementById('chart1'));
+        const chart2 = echarts.init(document.getElementById('chart2'));
+        const chart3 = echarts.init(document.getElementById('chart3'));
+        const chart4 = echarts.init(document.getElementById('chart4'));
+        // ピーチャート
+        const pieChart = echarts.init(document.getElementById('recallPie'));
 
-    function total(arr) { return arr.reduce((a,b)=>a+b, 0); }
+        function total(arr) { return arr.reduce((a, b) => a + b, 0); }
 
-    // ----- メイン: 赤線 = アクティブ率 (payment_by_call / call_required * 100) / 西瓜赤 #f07070
-    function createOptionWithRate(legend1, legend2, data1, data2, months, payData, callReqData) {
-        const rateData = months.map((_, i) => {
-            const req = callReqData[i] || 0;
-            const pay = payData[i] || 0;
-            return req === 0 ? 0 : parseFloat((pay / req * 100).toFixed(1));
-        });
+        // カード1用
+        function createOptionWithRate(legend1, legend2, data1, data2, months, payData, callReqData) {
+            const rateData = months.map((_, i) => {
+                const req = callReqData[i] || 0;
+                const pay = payData[i] || 0;
+                return req === 0 ? 0 : parseFloat((pay / req * 100).toFixed(1));
+            });
 
-        return {
-            animation: false,
-            tooltip: {
-                trigger: 'axis',
-                formatter: function(params) {
-                    let s = `<b>${params[0].axisValue}</b><br/>`;
-                    params.forEach(p => {
-                        if (p.seriesName === 'アクティブ率') {
-                            s += `${p.marker} ${p.seriesName} : ${p.value}%<br/>`;
-                        } else {
-                            s += `${p.marker} ${p.seriesName} : ${p.value}件<br/>`;
-                        }
-                    });
-                    return s;
-                }
-            },
-            legend: {
-                top: 0,
-                itemWidth: 14,
-                itemHeight: 8,
-                textStyle: { fontSize: 10, color: '#6b7280', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                data: [legend1, legend2, 'アクティブ率']
-            },
-            grid: { left: 28, right: 12, top: 30, bottom: 22 },
-            xAxis: {
-                type: 'category',
-                data: months,
-                axisLabel: { fontSize: 9, color: '#667085', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                axisLine: { lineStyle: { color: '#c7d2e5' } },
-                axisTick: { show: false }
-            },
-            yAxis: [
-                {
+            return {
+                animation: false,
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let s = `<b>${params[0].axisValue}</b><br/>`;
+                        params.forEach(p => {
+                            if (p.seriesName === 'アクティブ率') {
+                                s += `${p.marker} ${p.seriesName} : ${p.value}%<br/>`;
+                            } else {
+                                s += `${p.marker} ${p.seriesName} : ${p.value}件<br/>`;
+                            }
+                        });
+                        return s;
+                    }
+                },
+                legend: {
+                    top: 0,
+                    itemWidth: 14,
+                    itemHeight: 8,
+                    textStyle: { fontSize: 10, color: '#6b7280', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    data: [legend1, legend2, 'アクティブ率']
+                },
+                grid: { left: 28, right: 12, top: 30, bottom: 22 },
+                xAxis: {
+                    type: 'category',
+                    data: months,
+                    axisLabel: { fontSize: 9, color: '#667085', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    axisLine: { lineStyle: { color: '#c7d2e5' } },
+                    axisTick: { show: false }
+                },
+                yAxis: [{
                     type: 'value',
                     max: 60,
                     interval: 10,
                     axisLabel: { fontSize: 9, color: '#94a3b8', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     splitLine: { lineStyle: { color: '#eef2f7' } }
-                },
-                {
+                }, {
                     type: 'value',
                     min: 0,
                     max: 100,
                     interval: 20,
-                    axisLabel: { fontSize: 9, color: '#94a3b8', formatter: '{value}%', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    axisLabel: { fontSize: 9, color: '#94a3b8', formatter: '{value}%',
+                    fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     splitLine: { show: false }
-                }
-            ],
-            series: [
-                {
+                }],
+                series: [{
                     name: legend2,
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                    itemStyle: { color: '#5c93ff', borderRadius: [0,0,2,2] },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700,
+                        fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    itemStyle: { color: '#5c93ff', borderRadius: [0, 0, 2, 2] },
                     data: data2
-                },
-                {
+                }, {
                     name: legend1,
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                    itemStyle: { color: '#62c26f', borderRadius: [2,2,0,0] },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700,
+                        fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    itemStyle: { color: '#62c26f', borderRadius: [2, 2, 0, 0] },
                     data: data1
-                },
-                {
+                }, {
                     name: 'アクティブ率',
                     type: 'line',
                     smooth: true,
@@ -413,61 +505,60 @@
                     symbolSize: 8,
                     lineStyle: { width: 2.5, type: 'dashed', color: '#f07070' },
                     itemStyle: { color: '#f07070' },
-                    label: { show: true, formatter: '{c}%', fontSize: 9, color: '#b91c1c', fontWeight: 600, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    label: { show: true, formatter: '{c}%', fontSize: 9, color: '#b91c1c', fontWeight: 600,
+                        fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
                     data: rateData
-                }
-            ]
-        };
-    }
+                }]
+            };
+        }
 
-    // 他チャート用 (従来のbar + 総数推移の赤線)
-    function createOption(legend1, legend2, data1, data2, months) {
-        const totalLine = data1.map((v,i) => v + data2[i]);
-        return {
-            animation: false,
-            tooltip: { trigger: 'axis' },
-            legend: {
-                top: 0,
-                itemWidth: 14,
-                itemHeight: 8,
-                textStyle: { fontSize: 10, color: '#6b7280', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                data: [legend1, legend2, '総数推移']
-            },
-            grid: { left: 28, right: 12, top: 30, bottom: 22 },
-            xAxis: {
-                type: 'category',
-                data: months,
-                axisLabel: { fontSize: 9, color: '#667085', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                axisLine: { lineStyle: { color: '#c7d2e5' } },
-                axisTick: { show: false }
-            },
-            yAxis: {
-                type: 'value',
-                max: 60,
-                interval: 10,
-                axisLabel: { fontSize: 9, color: '#94a3b8', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                splitLine: { lineStyle: { color: '#eef2f7' } }
-            },
-            series: [
-                {
+        // カード2・3用
+        function createOption(legend1, legend2, data1, data2, months) {
+            const totalLine = data1.map((v, i) => v + data2[i]);
+            return {
+                animation: false,
+                tooltip: { trigger: 'axis' },
+                legend: {
+                    top: 0,
+                    itemWidth: 14,
+                    itemHeight: 8,
+                    textStyle: { fontSize: 10, color: '#6b7280', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    data: [legend1, legend2, '総数推移']
+                },
+                grid: { left: 28, right: 12, top: 30, bottom: 22 },
+                xAxis: {
+                    type: 'category',
+                    data: months,
+                    axisLabel: { fontSize: 9, color: '#667085', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    axisLine: { lineStyle: { color: '#c7d2e5' } },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 60,
+                    interval: 10,
+                    axisLabel: { fontSize: 9, color: '#94a3b8', fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    splitLine: { lineStyle: { color: '#eef2f7' } }
+                },
+                series: [{
                     name: legend2,
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                    itemStyle: { color: '#5c93ff', borderRadius: [0,0,2,2] },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700,
+                        fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    itemStyle: { color: '#5c93ff', borderRadius: [0, 0, 2, 2] },
                     data: data2
-                },
-                {
+                }, {
                     name: legend1,
                     type: 'bar',
                     stack: 'total',
                     barWidth: 24,
-                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
-                    itemStyle: { color: '#62c26f', borderRadius: [2,2,0,0] },
+                    label: { show: true, position: 'inside', fontSize: 9, color: '#fff', fontWeight: 700,
+                        fontFamily: "'HarmonyOS Sans SC','Segoe UI'" },
+                    itemStyle: { color: '#62c26f', borderRadius: [2, 2, 0, 0] },
                     data: data1
-                },
-                {
+                }, {
                     name: '総数推移',
                     type: 'line',
                     smooth: true,
@@ -476,85 +567,117 @@
                     lineStyle: { width: 1.8, type: 'dashed', color: '#ff6b6b' },
                     itemStyle: { color: '#ffffff', borderColor: '#ff6b6b', borderWidth: 1.5 },
                     data: totalLine
-                }
-            ]
-        };
-    }
-
-    // ----- ロード -----
-    async function loadDashboard() {
-        const { data, error } = await supabaseClient
-            .from('monthly_kpi_summary')
-            .select('*')
-            .order('target_month', { ascending: true });
-
-        if (error) {
-            alert(error.message);
-            return;
+                }]
+            };
         }
 
-        if (!data || data.length === 0) {
-            console.warn('データがありません');
-            return;
+        // ピーチャート用（固定データ）
+        function createPieOption() {
+            return {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b} : {c}件 ({d}%)'
+                },
+                legend: {
+                    show: false // 右側のテキストで代用するため非表示
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['35%', '70%'],
+                    center: ['50%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 6,
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    },
+                    label: {
+                        show: true,
+                        formatter: '{d}%',
+                        fontSize: 9,
+                        color: '#2c3e50',
+                        fontFamily: "'HarmonyOS Sans SC','Segoe UI'"
+                    },
+                    labelLine: {
+                        length: 6,
+                        length2: 4
+                    },
+                    emphasis: {
+                        label: { show: true, fontSize: 11, fontWeight: 'bold' }
+                    },
+                    data: [
+                        { value: 14, name: '準備中', itemStyle: { color: '#5c93ff' } },
+                        { value: 13, name: '繋がらなかった', itemStyle: { color: '#ff9f43' } },
+                        { value: 4, name: '案内拒否', itemStyle: { color: '#f368e0' } },
+                        { value: 3, name: '取次店対応', itemStyle: { color: '#00d2d3' } },
+                        { value: 1, name: '別アカウント利用中', itemStyle: { color: '#ff6b6b' } }
+                    ]
+                }]
+            };
         }
 
-        const months = data.map(d => d.target_month);
-        const call1 = data.map(d => d.call_required_count);
-        const call2 = data.map(d => d.call_unnecessary_count);
-        const auth1 = data.map(d => d.auth_by_call_count);
-        const auth2 = data.map(d => d.auth_without_call_count);
-        const pay1 = data.map(d => d.payment_by_call_count);
-        const pay2 = data.map(d => d.payment_without_call_count);
-        const recall1 = data.map(d => d.recall_case_count);
-        const recall2 = data.map(d => d.recall_auth_count);
+        // ----- ロード -----
+        async function loadDashboard() {
+            const { data, error } = await supabaseClient
+                .from('monthly_kpi_summary')
+                .select('*')
+                .order('target_month', { ascending: true });
 
-        chart1.setOption(createOptionWithRate(
-            '架電必要', '架電不要',
-            call1, call2,
-            months,
-            pay1,
-            call1
-        ));
+            if (error) {
+                alert(error.message);
+                return;
+            }
 
-        chart2.setOption(createOption('架電で認証済み', '架電不要で認証済み', auth1, auth2, months));
-        chart3.setOption(createOption('架電で決済済み', '架電不要で決済済み', pay1, pay2, months));
-        chart4.setOption(createOption('件数', '認証数', recall1, recall2, months));
+            if (!data || data.length === 0) {
+                console.warn('データがありません');
+                return;
+            }
 
-        // ---- 各総数を個別のspanに設定 ----
-        const totalCall1 = total(call1);
-        const totalCall2 = total(call2);
-        const totalAuth1 = total(auth1);
-        const totalAuth2 = total(auth2);
-        const totalPay1 = total(pay1);
-        const totalPay2 = total(pay2);
-        const totalRecall1 = total(recall1);
-        const totalRecall2 = total(recall2);
+            const months = data.map(d => d.target_month);
+            const call1 = data.map(d => d.call_required_count);
+            const call2 = data.map(d => d.call_unnecessary_count);
+            const auth1 = data.map(d => d.auth_by_call_count);
+            const auth2 = data.map(d => d.auth_without_call_count);
+            const pay1 = data.map(d => d.payment_by_call_count);
+            const pay2 = data.map(d => d.payment_without_call_count);
+            const recall1 = data.map(d => d.recall_case_count);
+            const recall2 = data.map(d => d.recall_auth_count);
 
-        document.getElementById('top1Count').textContent = totalCall1;
-        document.getElementById('top2Count').textContent = totalCall2;
-        document.getElementById('license1Count').textContent = totalAuth1;
-        document.getElementById('license2Count').textContent = totalAuth2;
-        document.getElementById('payment1Count').textContent = totalPay1;
-        document.getElementById('payment2Count').textContent = totalPay2;
-        document.getElementById('recall1Count').textContent = totalRecall1;
-        document.getElementById('recall2Count').textContent = totalRecall2;
+            chart1.setOption(createOptionWithRate('架電必要', '架電不要', call1, call2, months, pay1, call1));
+            chart2.setOption(createOption('架電で認証済み', '架電不要で認証済み', auth1, auth2, months));
+            chart3.setOption(createOption('架電で決済済み', '架電不要で決済済み', pay1, pay2, months));
+            chart4.setOption(createOption('件数', '認証数', recall1, recall2, months));
 
-        // ---- 総アクティブ率 (架電で決済済み / 架電必要 * 100) をシルバーバッジに表示 ----
-        const rate = totalCall1 === 0 ? 0 : (totalPay1 / totalCall1 * 100);
-        const rateDisplay = rate.toFixed(1) + '%';
-        document.getElementById('rateValue').textContent = rateDisplay;
+            // ピーチャート（固定）
+            pieChart.setOption(createPieOption());
 
-        // 更新日時
-        if (data.length) {
-            document.getElementById('updateTime').innerText =
-                new Date(data[data.length-1].updated_at).toLocaleString('ja-JP');
+            // 総数表示
+            document.getElementById('top1Count').textContent = total(call1);
+            document.getElementById('top2Count').textContent = total(call2);
+            document.getElementById('license1Count').textContent = total(auth1);
+            document.getElementById('license2Count').textContent = total(auth2);
+            document.getElementById('payment1Count').textContent = total(pay1);
+            document.getElementById('payment2Count').textContent = total(pay2);
+            document.getElementById('recall1Count').textContent = total(recall1);
+            document.getElementById('recall2Count').textContent = total(recall2);
+
+            const rate = total(call1) === 0 ? 0 : (total(pay1) / total(call1) * 100);
+            document.getElementById('rateValue').textContent = rate.toFixed(1) + '%';
+
+            if (data.length) {
+                document.getElementById('updateTime').innerText =
+                    new Date(data[data.length - 1].updated_at).toLocaleString('ja-JP');
+            }
         }
-    }
 
-    loadDashboard();
-    window.addEventListener('resize', () => {
-        chart1.resize(); chart2.resize(); chart3.resize(); chart4.resize();
-    });
-</script>
+        loadDashboard();
+        window.addEventListener('resize', () => {
+            chart1.resize();
+            chart2.resize();
+            chart3.resize();
+            chart4.resize();
+            pieChart.resize();
+        });
+    </script>
 </body>
 </html>
