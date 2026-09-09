@@ -37,20 +37,30 @@
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
+      padding: 6px 0 10px 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
     }
 
     .header-left h1 {
-      font-size: 28px;
-      font-weight: 800;
-      line-height: 1;
+      font-size: 18px;
+      font-weight: 600;
+      color: #b0b8c9;
+      line-height: 1.2;
       font-family: inherit;
+      letter-spacing: 0.5px;
+      margin: 0;
+      padding: 0;
     }
 
     .header-left p {
-      display: none;  /* 「パフォーマンス概要」を非表示 */
+      display: none;
     }
 
     .header-right {
@@ -64,18 +74,18 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 10px 14px;
+      padding: 8px 14px;
       box-shadow: var(--shadow);
     }
 
     .header-label {
       font-size: 10px;
       color: var(--sub);
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     select {
-      height: 38px;
+      height: 34px;
       border: 1px solid var(--border);
       border-radius: 10px;
       background: #fff;
@@ -87,7 +97,7 @@
     }
 
     button {
-      height: 38px;
+      height: 34px;
       border: none;
       border-radius: 10px;
       background: #1d3c78;
@@ -188,8 +198,15 @@
     /* ----- モバイル ----- */
     @media(max-width:1100px) {
       .grid { grid-template-columns: 1fr; }
-      .header { flex-direction: column; }
-      .header-right { width: 100%; }
+      .header { 
+        flex-direction: column; 
+        align-items: stretch;
+        gap: 12px;
+      }
+      .header-right { 
+        width: 100%;
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
@@ -199,7 +216,6 @@
 <div class="header">
   <div class="header-left">
     <h1>FY26_稼働率</h1>
-    <!-- p は非表示（パフォーマンス概要を削除） -->
   </div>
   <div class="header-right">
     <div class="header-card">
@@ -268,7 +284,6 @@
   function createChart(canvas, labels, real, forecast, maxArr, highlightIndex) {
     const ctx = canvas.getContext("2d");
 
-    // 最大稼働率用データ（実績がある日のみプロット、それ以外は null）
     const maxData = labels.map((_, idx) => {
       return (real[idx] !== null && real[idx] !== undefined) ? maxArr[idx] : null;
     });
@@ -346,7 +361,12 @@
         scales: {
           x: {
             grid: { color: '#eef2f7' },
-            ticks: { font: { size: 9, family: "'HarmonyOS Sans SC','Segoe UI'" } }
+            ticks: { 
+              font: { size: 9, family: "'HarmonyOS Sans SC','Segoe UI'" },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 20
+            }
           },
           y: {
             beginAtZero: true,
@@ -359,7 +379,7 @@
     });
   }
 
-  // ---------- 年間チャート描画（最大稼働率を月単位で追加） ----------
+  // ---------- 年間チャート描画（実績は0%を除外して計算） ----------
   function drawYear(data) {
     const labels = [];
     const real = [];
@@ -369,13 +389,20 @@
 
     for (let m = 1; m <= 12; m++) {
       const arr = data.filter(d => new Date(d.stat_date).getMonth() + 1 === m);
+      const filteredArr = arr.filter(d => d.utilization > 0);
+      
       let avg = null;
       let maxVal = null;
-      if (arr.length) {
-        const sum = arr.reduce((a, b) => a + b.utilization, 0);
-        avg = sum / arr.length;
-        maxVal = Math.max(...arr.map(d => d.utilization));
+
+      if (filteredArr.length > 0) {
+        const sum = filteredArr.reduce((a, b) => a + b.utilization, 0);
+        avg = sum / filteredArr.length;
+        maxVal = Math.max(...filteredArr.map(d => d.utilization));
+      } else if (arr.length > 0 && arr.every(d => d.utilization === 0)) {
+        avg = 0;
+        maxVal = 0;
       }
+      
       labels.push(m + '月');
 
       if (m > nowMonth) {
@@ -466,7 +493,10 @@
         scales: {
           x: {
             grid: { color: '#eef2f7' },
-            ticks: { font: { size: 9, family: "'HarmonyOS Sans SC','Segoe UI'" } }
+            ticks: { 
+              font: { size: 9, family: "'HarmonyOS Sans SC','Segoe UI'" },
+              maxRotation: 0
+            }
           },
           y: {
             beginAtZero: true,
@@ -479,14 +509,25 @@
     });
   }
 
-  // ---------- 月別カード描画（最大稼働率を追加） ----------
+  // ---------- 月別カード描画（0%を除外） ----------
   function drawMonth(month, data) {
     const box = document.createElement("div");
     box.className = "card month-card";
     if (month === today.getMonth() + 1) box.classList.add("active");
 
-    const avg = (data.reduce((a, b) => a + b.utilization, 0) / data.length);
-    const maxVal = Math.max(...data.map(d => d.utilization));
+    const filteredData = data.filter(d => d.utilization > 0);
+    
+    let avg = 0;
+    let maxVal = 0;
+    
+    if (filteredData.length > 0) {
+      const sum = filteredData.reduce((a, b) => a + b.utilization, 0);
+      avg = sum / filteredData.length;
+      maxVal = Math.max(...filteredData.map(d => d.utilization));
+    } else if (data.length > 0 && data.every(d => d.utilization === 0)) {
+      avg = 0;
+      maxVal = 0;
+    }
 
     box.innerHTML = `
       <div class="month-header">
@@ -555,6 +596,8 @@
 
   // ---------- セレクトボックス初期化 ----------
   function initSelect() {
+    const startMonth = document.getElementById('startMonth');
+    const endMonth = document.getElementById('endMonth');
     for (let i = 1; i <= 12; i++) {
       startMonth.add(new Option(i + "月", i));
       endMonth.add(new Option(i + "月", i));
@@ -566,8 +609,8 @@
 
   // ---------- 照会ボタン ----------
   function search() {
-    const s = parseInt(startMonth.value);
-    const e = parseInt(endMonth.value);
+    const s = parseInt(document.getElementById('startMonth').value);
+    const e = parseInt(document.getElementById('endMonth').value);
     if (e < s) { alert("終了月が開始月より前です"); return; }
     if (e - s >= 4) { alert("最大4ヶ月まで表示可能です"); return; }
     render(s, e);
