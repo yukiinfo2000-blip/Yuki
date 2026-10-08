@@ -353,7 +353,7 @@
 <div class="container">
 
     <!-- ============================================================ -->
-    <!-- 新規：開通メール件数（固定データ） -->
+    <!-- 新規：開通メール件数（動的データ） -->
     <!-- ============================================================ -->
     <div class="unit">
         <div class="unit-title">📧 開通メール件数</div>
@@ -494,11 +494,18 @@
 
 <script>
     // ============================================================
-    // Supabase 設定
+    // Supabase 設定 ⚠️ 请在这里填入您的 Supabase URL 和 Key
     // ============================================================
-    const SUPABASE_URL = "https://ieijoczgnndiqmowadty.supabase.co"
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg"
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+    const SUPABASE_URL = "https://ieijoczgnndiqmowadty.supabase.co"; // 例如: "https://xxxxxx.supabase.co"
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllaWpvY3pnbm5kaXFtb3dhZHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDM4MzksImV4cCI6MjA4ODc3OTgzOX0.vkhnClBek5ZZvJfW9fZwRpKnAVRViTd3EJOsWOJNuwg"; // 例如: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    
+    // 检查是否填写了配置
+
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+        console.warn("⚠️ 请先在代码中配置 SUPABASE_URL 和 SUPABASE_KEY！");
+    }
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     Chart.register(ChartDataLabels);
 
     // ============================================================
@@ -527,23 +534,53 @@
     let allDataCache = {};
 
     // ============================================================
-    // 開通メール件数チャート（固定データ）
+    // 開通メール件数チャート（動的从 Supabase 读取）
     // ============================================================
-    function renderMailChart() {
-        const mailLabels = ["1月","2月","3月","4月","5月","6月","7月","8月"];
-        const mailData = [29, 35, 33, 46, 33, 29, 40, 35];
-        const maxVal = Math.max(...mailData, 0);
+    async function renderMailChart(year) {
+        // 1. 从 Supabase 查询指定年份的数据
+        const { data, error } = await supabaseClient
+            .from('monthly_email_opens')
+            .select('*')
+            .eq('year_num', year)
+            .order('id', { ascending: true }); // 按 id 排序确保月份顺序正确
+
+        if (error) {
+            console.error('開通メール件数 データ取得エラー:', error);
+            // 发生错误时渲染空图表
+            drawMailChart([], []);
+            return;
+        }
+
+        // 2. 准备图表数据（如果某个月没有数据，默认显示为 0）
+        const mailLabels = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+        
+        // 将 Supabase 返回的数据转换成以月份为键的对象，方便查找
+        const dataMap = {};
+        (data || []).forEach(item => {
+            dataMap[item.month_label] = Number(item.open_count || 0);
+        });
+
+        // 按照 1月-12月 的顺序生成数据数组
+        const mailData = mailLabels.map(label => dataMap[label] || 0);
+
+        drawMailChart(mailLabels, mailData);
+    }
+
+    // 实际绘制邮件图表的函数
+    function drawMailChart(labels, data) {
+        const maxVal = Math.max(...data, 0);
         const suggestedMax = maxVal > 0 ? Math.ceil(maxVal / 10) * 10 + 10 : 50;
 
         if (mailChart) mailChart.destroy();
         const ctx = document.getElementById('mailChart').getContext('2d');
+        
         mailChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: mailLabels,
+                labels: labels,
                 datasets: [{
                     label: '開通メール件数',
-                    data: mailData,
+                    data: data,
                     backgroundColor: '#2d7d9a',
                     borderColor: '#1a5a72',
                     borderWidth: 1,
@@ -710,6 +747,9 @@
         const monthlyData = aggregateMonthlyDataFull(allDataCache[year]);
         currentMonthlyData = monthlyData;
 
+        // 动态更新开信邮件图表
+        renderMailChart(year); 
+
         renderChart1(monthlyData);
         renderRateTrend(monthlyData);
         renderChart2(monthlyData, document.getElementById('catSelect').value);
@@ -717,8 +757,7 @@
     }
 
     // ============================================================
-    // 図1-下段：月次電話量（積上げ） - 开通ラベンダー、％非表示、件表示削除
-    // 調整: 上部ラベルが切れないよう y 軸 max に余裕を持たせる
+    // 図1-下段：月次電話量（積上げ）
     // ============================================================
     function renderChart1(data) {
         const ds = data || currentMonthlyData;
@@ -734,7 +773,6 @@
         const colorSet = ['#4a7b9e', '#b8a5d9', '#6e8b7a', '#c97a5a'];
         const borderSet = ['#2a5f7a', '#9a87c0', '#4e6e5e', '#a86040'];
         const maxVal = Math.max(...totalArr, 0);
-        // 上部ラベルが切れないよう +20% 余裕を持たせる
         const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.25 / 50) * 50 + 50 : 100;
 
         const totalLabels = {
@@ -810,7 +848,7 @@
     }
 
     // ============================================================
-    // 図1-上段：接続率・有効接続率 折れ線（右軸） - 軸ラベル・目盛り非表示
+    // 図1-上段：接続率・有効接続率 折れ線
     // ============================================================
     function renderRateTrend(data) {
         const ds = data || currentMonthlyData;
@@ -869,7 +907,7 @@
     }
 
     // ============================================================
-    // 図2：各項目個別（軸ラベル・目盛り非表示）
+    // 図2：各項目個別
     // ============================================================
     function renderChart2(data, catKey) {
         const ds = data || currentMonthlyData;
@@ -932,13 +970,13 @@
     }
 
     // ============================================================
-    // 事務作業チャート（2つ） - リスト更新系に販促物リスト作成を追加、その他から削除
+    // 事務作業チャート（2つ）
     // ============================================================
     function renderOfficeCharts(data) {
         const ds = data || currentMonthlyData;
         const labels = monthLabels;
 
-        // チャート1: 開通リスト更新, 不備リスト更新, メルマガリスト, 販促物リスト作成
+        // チャート1: リスト更新系
         const d1 = ds.map(r => r.list_kaitsu || 0);
         const d2 = ds.map(r => r.list_fubi || 0);
         const d3 = ds.map(r => r.mail_list || 0);
@@ -976,7 +1014,7 @@
             }
         });
 
-        // チャート2: 取引先屋号作成, メルマガアプリ登録, OLC決済突合, イシュア不備（一次対応）, イシュア不備（M&S）, ジェイブリッツ案件 (販促物削除)
+        // チャート2: その他事務作業
         const d4 = ds.map(r => r.card || 0);
         const d5 = ds.map(r => r.mail_app || 0);
         const d7 = ds.map(r => r.olc || 0);
@@ -1020,7 +1058,7 @@
     }
 
     // ============================================================
-    // 電話量推移（折れ線） - 軸ラベル・目盛り非表示
+    // 電話量推移（折れ線）
     // ============================================================
     function drawCallChart(data) {
         let map = {};
@@ -1160,7 +1198,8 @@
     window.onload = function() {
         const now = new Date();
         document.getElementById('month').value = now.toISOString().slice(0,7);
-        renderMailChart(); // 開通メール件数チャートを描画
+        
+        // 移除了原本写死的 renderMailChart()，loadYearData 内部会调用它并传入年度
         loadYearData();
         loadByMonth();
     };
